@@ -349,9 +349,8 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
         if (NULL != cam_buff && NULL != cam_buff->data) 
 		{
             memset(cam_buff->data, 0xff, camera_dev->getFrameBufferSize());
-			mDataCB(CAMERA_MSG_RAW_IMAGE_NOTIFY, cam_buff, 0, NULL, mCallbackCookie);
+			mDataCB(CAMERA_MSG_RAW_IMAGE, cam_buff, 0, NULL, mCallbackCookie);
 			// mNotifyCB(CAMERA_MSG_RAW_IMAGE_NOTIFY, 0, 0, mCallbackCookie);
-			// mNotifyCB(CAMERA_MSG_RAW_IMAGE_NOTIFY, cam_buff, 0, NULL, mCallbackCookie);
             cam_buff->release(cam_buff);
         } 
 		else 
@@ -381,10 +380,10 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 		jpeg_enc.quality		= mJpegQuality;
 		jpeg_enc.rotate			= mJpegRotate;
 		
-		// do not use thumb now
-		jpeg_enc.thumbWidth		= 0; // mThumbWidth;
-		jpeg_enc.thumbHeight	= 0; // mThumbHeight;
+		jpeg_enc.thumbWidth		= mThumbWidth;
+		jpeg_enc.thumbHeight	= mThumbHeight;
 
+		jpeg_enc.scale_factor	= 1;
 		jpeg_enc.focal_length	= mFocalLength;
 
 		if (0 != strlen(mGpsMethod))

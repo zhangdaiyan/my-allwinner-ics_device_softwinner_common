@@ -172,8 +172,8 @@ void CameraHardware::initDefaultParameters()
 		p.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, value);
 		LOGV("supportFrameRateValue: [%s] %s", CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, value);
 
-		p.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "5000,30000");				// add temp for CTS
-		p.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, "(5000,30000)");	// add temp for CTS
+		p.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "5000,60000");				// add temp for CTS
+		p.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, "(5000,60000)");	// add temp for CTS
 
 		value = mCameraConfig->defaultFrameRateValue();
 		p.set(CameraParameters::KEY_PREVIEW_FRAME_RATE, value);
@@ -293,7 +293,6 @@ void CameraHardware::initDefaultParameters()
 	p.set(CameraParameters::KEY_PREVIEW_FORMAT, CameraParameters::PIXEL_FORMAT_YUV420SP);
 
     p.set(CameraParameters::KEY_SUPPORTED_PICTURE_FORMATS, CameraParameters::PIXEL_FORMAT_JPEG);
-    p.set(CameraParameters::KEY_VIDEO_FRAME_FORMAT, CameraParameters::PIXEL_FORMAT_YUV420SP);
 	
 	p.set(CameraParameters::KEY_JPEG_QUALITY, "90"); // maximum quality
 	p.set(CameraParameters::KEY_SUPPORTED_JPEG_THUMBNAIL_SIZES, "320x240,0x0");
@@ -696,8 +695,9 @@ status_t CameraHardware::setParameters(const char* p)
 	// preview format
 	const char * new_preview_format = params.getPreviewFormat();
 	LOGD("new_preview_format : %s", new_preview_format);
-	if (strcmp(new_preview_format, CameraParameters::PIXEL_FORMAT_YUV420SP) == 0
-		|| strcmp(new_preview_format, CameraParameters::PIXEL_FORMAT_YUV420P) == 0) 
+	if (new_preview_format != NULL
+		&& (strcmp(new_preview_format, CameraParameters::PIXEL_FORMAT_YUV420SP) == 0
+		|| strcmp(new_preview_format, CameraParameters::PIXEL_FORMAT_YUV420P) == 0)) 
 	{
 		mParameters.setPreviewFormat(new_preview_format);
 	}
@@ -707,7 +707,11 @@ status_t CameraHardware::setParameters(const char* p)
         return -EINVAL;
     }
 
-	if (strcmp(params.getPictureFormat(), CameraParameters::PIXEL_FORMAT_JPEG) != 0) 
+	// picture format
+	const char * new_picture_format = params.getPictureFormat();
+	LOGD("new_picture_format : %s", new_picture_format);
+	if (new_picture_format == NULL
+		|| (strcmp(new_picture_format, CameraParameters::PIXEL_FORMAT_JPEG) != 0)) 
     {
         LOGE("Only jpeg still pictures are supported");
         return -EINVAL;
@@ -1017,7 +1021,10 @@ status_t CameraHardware::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2)
 	switch (cmd)
 	{
 	case CAMERA_CMD_SET_SCREEN_ID:
-		mPreviewWindow.setScreenID(arg1);
+		if (mPreviewWindow.isLayerShowHW())
+		{
+			mPreviewWindow.setScreenID(arg1);			// only here to close layer
+		}
 		return OK;
 	}
 
@@ -1191,6 +1198,10 @@ status_t CameraHardware::cleanupCamera()
     /* Stop and disconnect the camera device. */
     V4L2Camera* const camera_dev = getCameraDevice();
     if (camera_dev != NULL) {
+		if (mPreviewWindow.isLayerShowHW())
+		{
+			mPreviewWindow.showLayer(false);			// only here to close layer
+		}
         if (camera_dev->isStarted()) {
             camera_dev->stopDeliveringFrames();
             res = camera_dev->stopDevice();
@@ -1199,7 +1210,6 @@ status_t CameraHardware::cleanupCamera()
             }
         }
         if (camera_dev->isConnected()) {
-			mPreviewWindow.showLayer(false);			// only here to close layer
             res = camera_dev->disconnectDevice();
             if (res != NO_ERROR) {
                 return -res;

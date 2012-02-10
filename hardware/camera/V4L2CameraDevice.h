@@ -27,8 +27,8 @@
 #include <type_camera.h>
 
 // preview size should not larger than 1280x720
-#define MAX_PREVIEW_WIDTH	1280
-#define MAX_PREVIEW_HEIGHT	720
+#define MAX_PREVIEW_WIDTH	1600
+#define MAX_PREVIEW_HEIGHT	1200
 
 namespace android {
 

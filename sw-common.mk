@@ -1,4 +1,6 @@
 
+BUILD_NUMBER := $(shell date +%Y%m%d)
+
 PRODUCT_COPY_FILES += \
 	device/softwinner/common/bin/fsck.exfat:system/bin/fsck.exfat \
 	device/softwinner/common/bin/mkfs.exfat:system/bin/mkfs.exfat \

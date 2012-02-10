@@ -197,23 +197,23 @@ status_t V4L2CameraDevice::startDevice(int width,
 
 	mPreviewUseHW = true;
 	mPreviewAfter = 1000000 / getFrameRate();
+	
+	int pix = mFrameWidth * mFrameHeight;
+	
+	if (pix <= 640*480)
+	{
+		mPreviewAfter = 1000000 / 15;		// VGA
+	}
+	else
+	{
+		mPreviewAfter = 1000000 / 7;
+	}
 
 	// front camera do not use hw preview, SW preview will mirror it
 	if (mCameraFacing == CAMERA_FACING_FRONT)
 	{
 		LOGD("do not us hw preview");
 		mPreviewUseHW = false;
-
-		int pix = mFrameWidth * mFrameHeight;
-		
-		if (pix <= 640*480)
-		{
-			mPreviewAfter = 1000000 / 15;		// VGA
-		}
-		else
-		{
-			mPreviewAfter = 1000000 / 7;
-		}
 	}
 	
     return res;
@@ -300,6 +300,10 @@ bool V4L2CameraDevice::inWorkerThread()
 
 		mTakingPicture = false;
 		mPrepareTakePhoto = false;
+		
+		pthread_mutex_lock(&mMutexTakePhotoEnd);
+		pthread_cond_signal(&mCondTakePhotoEnd);
+		pthread_mutex_unlock(&mMutexTakePhotoEnd);
 		return true;
 	}
 

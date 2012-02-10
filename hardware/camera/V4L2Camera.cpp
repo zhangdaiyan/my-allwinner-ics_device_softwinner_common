@@ -42,6 +42,9 @@ V4L2Camera::V4L2Camera(CameraHardware* camera_hal)
       mStartDeliverTimeUs(0)
 {
 	F_LOG;
+	
+	pthread_mutex_init(&mMutexTakePhotoEnd, NULL);
+	pthread_cond_init(&mCondTakePhotoEnd, NULL);
 }
 
 V4L2Camera::~V4L2Camera()
@@ -99,12 +102,21 @@ status_t V4L2Camera::stopDeliveringFrames()
 {
     LOGV("%s", __FUNCTION__);
 
+	if (mTakingPicture)
+	{
+		LOGW("wait until take picture end before stop thread ......");
+		
+		pthread_mutex_lock(&mMutexTakePhotoEnd);
+		pthread_cond_wait(&mCondTakePhotoEnd, &mMutexTakePhotoEnd);
+		pthread_mutex_unlock(&mMutexTakePhotoEnd);
+	}
+
 	// for CTS, V4L2Camera::WorkerThread::readyToRun must be called before stopDeliveringFrames
 	int64_t nowTimeUs = systemTime() / 1000;
-	if (nowTimeUs - mStartDeliverTimeUs < 1000000)
+	if (nowTimeUs - mStartDeliverTimeUs < 100000)
 	{
-		LOGW("should not stop preview so quickly, to delay 1 sec ......");
-		// usleep(1000000);
+		LOGW("should not stop preview so quickly, to delay a while ......");
+		usleep(10000);
 	}
 	
     if (!isStarted()) {

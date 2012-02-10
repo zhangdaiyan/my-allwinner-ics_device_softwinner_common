@@ -503,6 +503,9 @@ protected:
 
 	// add for CTS
 	int64_t						mStartDeliverTimeUs;
+	
+	pthread_mutex_t 			mMutexTakePhotoEnd;
+	pthread_cond_t				mCondTakePhotoEnd;
 
 public:
 	

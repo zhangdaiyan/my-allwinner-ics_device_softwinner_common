@@ -47,6 +47,8 @@ PreviewWindow::PreviewWindow()
 PreviewWindow::~PreviewWindow()
 {
 	F_LOG;
+	mPreviewWindow = NULL;
+	mPreviewWindow->perform = NULL;
 }
 
 /****************************************************************************
@@ -56,7 +58,7 @@ PreviewWindow::~PreviewWindow()
 status_t PreviewWindow::setPreviewWindow(struct preview_stream_ops* window,
                                          int preview_fps)
 {
-    LOGV("%s: current: %p -> new: %p", __FUNCTION__, mPreviewWindow, window);
+    LOGD("%s: current: %p -> new: %p", __FUNCTION__, mPreviewWindow, window);
 	
     status_t res = NO_ERROR;
     Mutex::Autolock locker(&mObjectLock);
@@ -143,7 +145,7 @@ bool PreviewWindow::onNextFrameAvailableHW(const void* frame,
                                                    mPreviewFrameWidth,
                                                    mPreviewFrameHeight,
                                                    HWC_FORMAT_DEFAULT,
-                                                   0);
+                                                   mScreenID);
         if (res != NO_ERROR) {
             LOGE("%s: Error in set_buffers_geometry %d -> %s",
                  __FUNCTION__, -res, strerror(-res));
@@ -307,7 +309,7 @@ int PreviewWindow::showLayer(bool on)
 {
 	LOGV("%s, %s", __FUNCTION__, on ? "on" : "off");
 	mLayerShowHW = on ? 1 : 0;
-	if (mPreviewWindow != NULL)
+	if (mPreviewWindow != NULL && mPreviewWindow->perform != NULL)
 	{
 		mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SHOW, mLayerShowHW);
 	}
@@ -326,7 +328,7 @@ int PreviewWindow::setScreenID(int id)
 {
 	LOGV("%s, id: %d", __FUNCTION__, id);
 	mScreenID = id;
-	if (mPreviewWindow != NULL)
+	if (mPreviewWindow != NULL && mPreviewWindow->perform != NULL)
 	{
 		mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SETSCREEN, mScreenID);
 	}

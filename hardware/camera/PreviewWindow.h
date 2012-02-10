@@ -166,6 +166,11 @@ public:
 	int setLayerFormat(int fmt);
 	int setScreenID(int id);
 
+	inline bool isLayerShowHW()
+	{
+		return (mLayerShowHW == 1) ? true : false;
+	}
+
 protected:
 	bool							mOverlayFirstFrame;
 	bool							mShouldAdjustDimensions;
