@@ -61,6 +61,7 @@ function make-all()
 # copy files for AndroidModify tool
 function copy_android_modify_tool_files()
 {
+# sun4i chip
 	VENDOR=$(gettop)/../lichee/tools/pack/chips/sun4i/wboot/bootfs/vendor
 	rm $VENDOR -rf
 	mkdir $VENDOR
@@ -68,11 +69,27 @@ function copy_android_modify_tool_files()
 	mkdir $VENDOR/system/media
 	mkdir $VENDOR/system/usr
 	mkdir $VENDOR/system/usr/keylayout
-	cp $OUT/root/initlogo.rle $VENDOR/
-	cp $OUT/root/*.rc $VENDOR/
+#	cp $OUT/root/initlogo.rle $VENDOR/
+#	cp $OUT/root/*.rc $VENDOR/
 	cp $OUT/system/build.prop $VENDOR/system
 	cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
 	cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
+
+# sun5i chip
+	VENDOR=$(gettop)/../lichee/tools/pack/chips/sun5i/wboot/bootfs/vendor
+	rm $VENDOR -rf
+	mkdir $VENDOR
+	mkdir $VENDOR/system
+	mkdir $VENDOR/system/media
+	mkdir $VENDOR/system/usr
+	mkdir $VENDOR/system/usr/keylayout
+#	cp $OUT/root/initlogo.rle $VENDOR/
+#	cp $OUT/root/*.rc $VENDOR/
+	cp $OUT/system/build.prop $VENDOR/system
+	cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
+	cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
+
+	echo "android modify tools files copied!"
 
 }
 
@@ -82,7 +99,7 @@ function pack()
 	export CRANE_IMAGE_OUT=$OUT
 	export PACKAGE=$T/../lichee/tools/pack
 
-#	copy_android_modify_tool_files
+	copy_android_modify_tool_files
 	sh $DEVICE/package.sh $1
 }
 

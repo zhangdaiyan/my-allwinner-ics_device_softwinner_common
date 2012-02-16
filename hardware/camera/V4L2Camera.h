@@ -35,6 +35,8 @@ namespace android {
 #define DEVICE_FRONT	"/dev/video1"
 #define NB_BUFFER 4
 
+// #define PREVIEW_FMT_RGBA32
+
 class CameraHardware;
 
 /* Encapsulates an abstract class V4L2Camera that defines

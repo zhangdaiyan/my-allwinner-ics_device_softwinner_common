@@ -365,6 +365,7 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 		void * pOutBuf = NULL;
 		int bufSize = 0;
 		int pic_w, pic_h;
+		int factor = 0;
 
 		camera_dev->getPictureSize(&pic_w, &pic_h);
 			
@@ -383,7 +384,18 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 		jpeg_enc.thumbWidth		= mThumbWidth;
 		jpeg_enc.thumbHeight	= mThumbHeight;
 
-		jpeg_enc.scale_factor	= 1;
+		if ((mThumbWidth != 0) && (mThumbHeight != 0))
+		{
+			if ((jpeg_enc.src_w / mThumbWidth >= 4) && (jpeg_enc.src_h / mThumbHeight >= 4))
+			{
+				factor = 2;
+			}
+			else if ((jpeg_enc.src_w / mThumbWidth >= 2) && (jpeg_enc.src_h / mThumbHeight >= 2))
+			{
+				factor = 1;
+			}
+		}
+		jpeg_enc.scale_factor	= factor;
 		jpeg_enc.focal_length	= mFocalLength;
 
 		if (0 != strlen(mGpsMethod))
@@ -401,14 +413,15 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 			jpeg_enc.enable_gps			= 0;
 		}
 		
-		LOGD("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d,Gps method: %s, thumbW: %d, thumbH: %d", 
+		LOGD("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d, Gps method: %s, thumbW: %d, thumbH: %d, thubmFactor: %d", 
 			jpeg_enc.addrY, 
 			jpeg_enc.src_w, jpeg_enc.src_h,
 			jpeg_enc.pic_w, jpeg_enc.pic_h,
 			jpeg_enc.quality, jpeg_enc.rotate,
 			jpeg_enc.gps_processing_method,
 			jpeg_enc.thumbWidth,
-			jpeg_enc.thumbHeight);
+			jpeg_enc.thumbHeight,
+			jpeg_enc.scale_factor);
 		
 		pOutBuf = (void *)malloc(jpeg_enc.pic_w * jpeg_enc.pic_h << 2);
 		if (pOutBuf == NULL)
@@ -442,8 +455,6 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 			pOutBuf = NULL;
 		}
     }
-
-	LOGD("taking photo to CAMERA_MSG_POSTVIEW_FRAME");
 
 	if (isMessageEnabled(CAMERA_MSG_POSTVIEW_FRAME) )
 	{

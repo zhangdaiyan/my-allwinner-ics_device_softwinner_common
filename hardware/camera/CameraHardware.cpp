@@ -1011,7 +1011,7 @@ void CameraHardware::putParameters(char* params)
 
 status_t CameraHardware::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2)
 {
-    LOGV("%s: cmd = %d, arg1 = %d, arg2 = %d", __FUNCTION__, cmd, arg1, arg2);
+    LOGV("%s: cmd = %x, arg1 = %d, arg2 = %d", __FUNCTION__, cmd, arg1, arg2);
 
     /* TODO: Future enhancements. */
 
@@ -1188,6 +1188,9 @@ status_t CameraHardware::cleanupCamera()
 	// reset preview format to yuv420sp
 	mParameters.set(CameraParameters::KEY_PREVIEW_FORMAT, CameraParameters::PIXEL_FORMAT_YUV420SP);
 	mCallbackNotifier.storeMetaDataInBuffers(false);
+
+	mParameters.set(CameraParameters::KEY_JPEG_THUMBNAIL_WIDTH, 320);
+	mParameters.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, 240);
 	
     /* If preview is running - stop it. */
     res = doStopPreview();

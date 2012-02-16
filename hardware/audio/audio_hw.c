@@ -147,7 +147,8 @@ D/tinyalsa(  602): mix id:15 name:ADC Input Mux
 #define PORT_VX 2
 #define PORT_TONES 3
 #define PORT_VIBRA 4
-#define PORT_MODEM 5
+
+#define PORT_MODEM 0
 #define PORT_MM_LP 6
 #define PORT_SPDIF 9
 #define PORT_HDMI 0
@@ -693,10 +694,23 @@ static void end_call(struct tuna_audio_device *adev)
 {
     LOGE("Closing modem PCMs");
 
-    pcm_stop(adev->pcm_modem_dl);
-    pcm_stop(adev->pcm_modem_ul);
-    pcm_close(adev->pcm_modem_dl);
-    pcm_close(adev->pcm_modem_ul);
+	if (adev->pcm_modem_dl != NULL)
+	{
+    	pcm_stop(adev->pcm_modem_dl);
+	}
+	if (adev->pcm_modem_ul != NULL)
+	{
+		pcm_stop(adev->pcm_modem_ul);
+	}
+    if (adev->pcm_modem_dl != NULL)
+    {
+    	pcm_close(adev->pcm_modem_dl);
+    }
+	if (adev->pcm_modem_ul != NULL)
+	{
+    	pcm_close(adev->pcm_modem_ul);
+	}
+	
     adev->pcm_modem_dl = NULL;
     adev->pcm_modem_ul = NULL;
 }

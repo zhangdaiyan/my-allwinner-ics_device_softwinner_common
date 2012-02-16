@@ -134,13 +134,13 @@ static int hwc_setcolorkey(sun4i_hwc_context_t  *ctx)
 	ck.red_match_rule 				= 2;
 	ck.green_match_rule 			= 2;
 	ck.blue_match_rule 				= 2;
-	args[0] 						= 0;
+	args[0] 						= ctx->hwc_screen;
     args[1] 						= (unsigned long)&ck;
     ioctl(ctx->dispfd,DISP_CMD_SET_COLORKEY,(void*)args);//pipe1, different with video layer's pipe
 
 	args[0] 						= ctx->hwc_screen;
     args[1] 						= fb_layer_hdl;
-    args[2] 						= 0;
+    args[2] 						= ctx->hwc_screen;
     ioctl(ctx->dispfd,DISP_CMD_LAYER_SET_PIPE,(void*)args);//pipe1, different with video layer's pipe
 
     args[0] 						= ctx->hwc_screen;
@@ -922,7 +922,7 @@ static int hwc_show(sun4i_hwc_context_t *ctx,int value)
 				
 			    ioctl(ctx->dispfd, DISP_CMD_VIDEO_START, args);				
 
-			    args[0] 						= ctx->hwc_screen;
+			    args[0] 						= 0;
 			    args[1] 						= fb_layer_hdl;
 			    ioctl(ctx->dispfd,DISP_CMD_LAYER_ALPHA_OFF,(void*)args);//disable the global alpha, use the pixel's alpha
 					ctx->hwc_layeropen = true;
@@ -937,7 +937,7 @@ static int hwc_show(sun4i_hwc_context_t *ctx,int value)
 				
 				ioctl(fd, DISP_CMD_VIDEO_STOP, args);
 
-			    args[0] 						= ctx->hwc_screen;
+			    args[0] 						= 0;
 			    args[1] 						= fb_layer_hdl;
 			    ioctl(ctx->dispfd,DISP_CMD_LAYER_ALPHA_ON,(void*)args);//disable the global alpha, use the pixel's alpha
 
@@ -985,7 +985,7 @@ static int hwc_reqshow(sun4i_hwc_context_t *ctx,int value)
 					
 				    ioctl(ctx->dispfd, DISP_CMD_VIDEO_START, args);				
 
-    			    args[0] 						= ctx->hwc_screen;
+    			    args[0] 						= 0;
     			    args[1] 						= fb_layer_hdl;
     			    ioctl(ctx->dispfd,DISP_CMD_LAYER_ALPHA_OFF,(void*)args);//disable the global alpha, use the pixel's alpha
 					ctx->hwc_layeropen = true;
@@ -1002,7 +1002,7 @@ static int hwc_reqshow(sun4i_hwc_context_t *ctx,int value)
 				
 				ioctl(fd, DISP_CMD_VIDEO_STOP, args);
 
-			    args[0] 						= ctx->hwc_screen;
+			    args[0] 						= 0;
 			    args[1] 						= fb_layer_hdl;
 			    ioctl(ctx->dispfd,DISP_CMD_LAYER_ALPHA_ON,(void*)args);//disable the global alpha, use the pixel's alpha
 				

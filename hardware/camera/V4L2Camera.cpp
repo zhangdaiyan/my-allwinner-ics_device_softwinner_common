@@ -101,15 +101,14 @@ status_t V4L2Camera::startDeliveringFrames(bool one_burst)
 status_t V4L2Camera::stopDeliveringFrames()
 {
     LOGV("%s", __FUNCTION__);
-
+	
+	pthread_mutex_lock(&mMutexTakePhotoEnd);
 	if (mTakingPicture)
 	{
-		LOGW("wait until take picture end before stop thread ......");
-		
-		pthread_mutex_lock(&mMutexTakePhotoEnd);
+		LOGW("wait until take picture end before stop thread ......");		
 		pthread_cond_wait(&mCondTakePhotoEnd, &mMutexTakePhotoEnd);
-		pthread_mutex_unlock(&mMutexTakePhotoEnd);
 	}
+	pthread_mutex_unlock(&mMutexTakePhotoEnd);
 
 	// for CTS, V4L2Camera::WorkerThread::readyToRun must be called before stopDeliveringFrames
 	int64_t nowTimeUs = systemTime() / 1000;
@@ -129,6 +128,20 @@ status_t V4L2Camera::stopDeliveringFrames()
     return res;
 }
 
+static void NV12ToNV21(const void* nv12, void* nv21, int width, int height)
+{	
+	char * src_uv = (char *)nv12 + width * height;
+	char * dst_uv = (char *)nv21 + width * height;
+
+	memcpy(nv21, nv12, width * height);
+
+	for(int i = 0; i < width * height / 2; i += 2)
+	{
+		*(dst_uv + i) = *(src_uv + i + 1);
+		*(dst_uv + i + 1) = *(src_uv + i);
+	}
+}
+
 status_t V4L2Camera::getCurrentPreviewFrame(void* buffer)
 {
     if (!isStarted()) {
@@ -140,6 +153,7 @@ status_t V4L2Camera::getCurrentPreviewFrame(void* buffer)
         return EINVAL;
     }
 
+#ifdef PREVIEW_FMT_RGBA32
     /* In emulation the framebuffer is never RGB. */
     switch (mPixelFormat) {
         case V4L2_PIX_FMT_YVU420:
@@ -160,6 +174,20 @@ status_t V4L2Camera::getCurrentPreviewFrame(void* buffer)
                  __FUNCTION__, reinterpret_cast<const char*>(&mPixelFormat));
             return EINVAL;
     }
+#else
+	if (mPixelFormat == V4L2_PIX_FMT_NV21)
+	{
+		// NV21
+		memcpy(buffer, mCurrentFrame, mFrameWidth * mFrameHeight * 3 / 2);
+	}
+	else if (mPixelFormat == V4L2_PIX_FMT_NV12)
+	{
+		// NV12 to NV21
+		NV12ToNV21(mCurrentFrame, buffer, mFrameWidth, mFrameHeight);
+	}
+	
+	return OK;
+#endif
 }
 
 /****************************************************************************

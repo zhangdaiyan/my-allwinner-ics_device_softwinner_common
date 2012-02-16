@@ -58,7 +58,7 @@ PreviewWindow::~PreviewWindow()
 status_t PreviewWindow::setPreviewWindow(struct preview_stream_ops* window,
                                          int preview_fps)
 {
-    LOGD("%s: current: %p -> new: %p", __FUNCTION__, mPreviewWindow, window);
+    LOGV("%s: current: %p -> new: %p", __FUNCTION__, mPreviewWindow, window);
 	
     status_t res = NO_ERROR;
     Mutex::Autolock locker(&mObjectLock);
@@ -223,13 +223,19 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
         res = mPreviewWindow->set_buffers_geometry(mPreviewWindow,
                                                    mPreviewFrameWidth,
                                                    mPreviewFrameHeight,
+#ifdef PREVIEW_FMT_RGBA32
                                                    HAL_PIXEL_FORMAT_RGBA_8888);
+#else
+                                                   HAL_PIXEL_FORMAT_YCrCb_420_SP);
+#endif
         if (res != NO_ERROR) {
             LOGE("%s: Error in set_buffers_geometry %d -> %s",
                  __FUNCTION__, -res, strerror(-res));
             // return false;
         }
 		mShouldAdjustDimensions = false;
+
+		res = mPreviewWindow->set_buffer_count(mPreviewWindow, 3);
     }
 
     /*
@@ -243,6 +249,11 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
     if (res != NO_ERROR || buffer == NULL) {
         LOGE("%s: Unable to dequeue preview window buffer: %d -> %s",
             __FUNCTION__, -res, strerror(-res));
+
+		int undequeued = 0;
+		mPreviewWindow->get_min_undequeued_buffer_count(mPreviewWindow, &undequeued);
+		LOGW("now undequeued: %d", undequeued);
+		
         return false;
     }
 
