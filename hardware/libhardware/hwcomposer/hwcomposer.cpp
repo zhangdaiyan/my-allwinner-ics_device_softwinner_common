@@ -140,7 +140,7 @@ static int hwc_setcolorkey(sun4i_hwc_context_t  *ctx)
 
 	args[0] 						= ctx->hwc_screen;
     args[1] 						= fb_layer_hdl;
-    args[2] 						= ctx->hwc_screen;
+    args[2] 						= 0;
     ioctl(ctx->dispfd,DISP_CMD_LAYER_SET_PIPE,(void*)args);//pipe1, different with video layer's pipe
 
     args[0] 						= ctx->hwc_screen;
