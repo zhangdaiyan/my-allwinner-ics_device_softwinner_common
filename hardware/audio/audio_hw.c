@@ -39,6 +39,8 @@
 
 #include "ril_interface.h"
 
+#include <cutils/properties.h> // for property_get
+
 #define F_LOG LOGV("%s, line: %d", __FUNCTION__, __LINE__);
 
 /* Mixer control names */
@@ -1159,6 +1161,38 @@ static int start_output_stream(struct tuna_stream_out *out)
     struct tuna_audio_device *adev = out->dev;
     unsigned int card = CARD_TUNA_DEFAULT;
     unsigned int port = PORT_MM;
+
+	int device = adev->devices;
+	char prop_value[512];
+    int ret = property_get("audio.routing", prop_value, "");
+	if (ret > 0)
+	{
+	    if(atoi(prop_value) == AUDIO_DEVICE_OUT_SPEAKER)
+	    {
+			LOGD("start_output_stream, AUDIO_DEVICE_OUT_SPEAKER");
+			device = AUDIO_DEVICE_OUT_SPEAKER;
+		}
+		else if(atoi(prop_value) == AUDIO_DEVICE_OUT_AUX_DIGITAL)
+		{
+			LOGD("start_output_stream AUDIO_DEVICE_OUT_AUX_DIGITAL");
+			device = AUDIO_DEVICE_OUT_AUX_DIGITAL;
+		}
+		else if(atoi(prop_value) == AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET)
+		{
+			LOGD("start_output_stream AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET");
+			device = AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET;
+		}
+		else
+		{
+			LOGW("unknown audio.routing : %s", prop_value);
+		}
+	}
+	else
+	{
+		LOGW("get audio.routing failed");
+	}
+
+	adev->devices = device;
 
     adev->active_output = out;
 

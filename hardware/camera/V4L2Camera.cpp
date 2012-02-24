@@ -39,12 +39,15 @@ V4L2Camera::V4L2Camera(CameraHardware* camera_hal)
       mState(ECDS_CONSTRUCTED),
       mTakingPicture(false),
       mInPictureThread(false),
-      mStartDeliverTimeUs(0)
+      mThreadRunning(false)
 {
 	F_LOG;
 	
 	pthread_mutex_init(&mMutexTakePhotoEnd, NULL);
 	pthread_cond_init(&mCondTakePhotoEnd, NULL);
+	
+	pthread_mutex_init(&mMutexThreadRunning, NULL);
+	pthread_cond_init(&mCondThreadRunning, NULL);
 }
 
 V4L2Camera::~V4L2Camera()
@@ -83,9 +86,9 @@ status_t V4L2Camera::Initialize()
 
 status_t V4L2Camera::startDeliveringFrames(bool one_burst)
 {
-    LOGV("%s", __FUNCTION__);
+    LOGD("%s", __FUNCTION__);
 
-	mStartDeliverTimeUs = systemTime() / 1000;
+	mThreadRunning = false;
 
     if (!isStarted()) {
         LOGE("%s: Device is not started", __FUNCTION__);
@@ -107,16 +110,19 @@ status_t V4L2Camera::stopDeliveringFrames()
 	{
 		LOGW("wait until take picture end before stop thread ......");		
 		pthread_cond_wait(&mCondTakePhotoEnd, &mMutexTakePhotoEnd);
+		LOGW("wait take picture ok");
 	}
 	pthread_mutex_unlock(&mMutexTakePhotoEnd);
 
 	// for CTS, V4L2Camera::WorkerThread::readyToRun must be called before stopDeliveringFrames
-	int64_t nowTimeUs = systemTime() / 1000;
-	if (nowTimeUs - mStartDeliverTimeUs < 100000)
+	pthread_mutex_lock(&mMutexThreadRunning);
+	if (!mThreadRunning)
 	{
-		LOGW("should not stop preview so quickly, to delay a while ......");
-		usleep(10000);
+		LOGW("should not stop preview so quickly, wait thread running first ......");
+		pthread_cond_wait(&mCondThreadRunning, &mMutexThreadRunning);
+		LOGW("wait thread running ok");
 	}
+	pthread_mutex_unlock(&mMutexThreadRunning);
 	
     if (!isStarted()) {
         LOGW("%s: Device is not started", __FUNCTION__);
@@ -153,7 +159,7 @@ status_t V4L2Camera::getCurrentPreviewFrame(void* buffer)
         return EINVAL;
     }
 
-#ifdef PREVIEW_FMT_RGBA32
+#if PREVIEW_FMT_RGBA32
     /* In emulation the framebuffer is never RGB. */
     switch (mPixelFormat) {
         case V4L2_PIX_FMT_YVU420:
@@ -292,7 +298,7 @@ bool V4L2Camera::inWorkerThread()
 
 status_t V4L2Camera::WorkerThread::readyToRun()
 {
-    LOGV("Starting V4L2Camera device worker thread...");
+    LOGD("V4L2Camera::WorkerThread::readyToRun");
 
     LOGW_IF(mThreadControl >= 0 || mControlFD >= 0,
             "%s: Thread control FDs are opened", __FUNCTION__);
@@ -301,7 +307,8 @@ status_t V4L2Camera::WorkerThread::readyToRun()
     if (pipe(thread_fds) == 0) {
         mThreadControl = thread_fds[1];
         mControlFD = thread_fds[0];
-        LOGV("V4L2Camera's worker thread has been started.");
+        LOGD("V4L2Camera's worker thread has been started.");
+
         return NO_ERROR;
     } else {
         LOGE("%s: Unable to create thread control FDs: %d -> %s",

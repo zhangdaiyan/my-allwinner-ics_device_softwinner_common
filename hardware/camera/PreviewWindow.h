@@ -17,6 +17,8 @@
 #ifndef HW_EMULATOR_CAMERA_PREVIEW_WINDOW_H
 #define HW_EMULATOR_CAMERA_PREVIEW_WINDOW_H
 
+#include <ui/Rect.h>
+
 /*
  * Contains declaration of a class PreviewWindow that encapsulates functionality
  * of a preview window set via set_preview_window camera HAL API.
@@ -170,13 +172,30 @@ public:
 	{
 		return (mLayerShowHW == 1) ? true : false;
 	}
+	
+	inline void setZoomValue(int zoom)
+	{
+		mZoomValue = zoom;
+	}
+	
+	inline void setMaxZoomValue(int zoom)
+	{
+		mMaxZoomValue = zoom;
+	}
 
+	void calculateCrop();
+	
 protected:
 	bool							mOverlayFirstFrame;
 	bool							mShouldAdjustDimensions;
 	int								mLayerShowHW;
 	int								mLayerFormat;
 	int								mScreenID;
+	
+	Rect							mRectCrop;
+	int								mZoomValue;
+	int								mZoomValueLast;
+	int								mMaxZoomValue;
 };
 
 }; /* namespace android */

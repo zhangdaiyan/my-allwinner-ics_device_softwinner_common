@@ -472,20 +472,20 @@ static int hwc_setrect(sun4i_hwc_context_t *ctx,hwc_rect_t *croprect,hwc_rect_t 
 
 		ret = ioctl(fd, DISP_CMD_LAYER_GET_PARA, &tmp_args);
 
-        if((tmpLayerAttr.fb.size.width != croprect->right - croprect->left)
-           ||(tmpLayerAttr.fb.size.height != croprect->bottom - croprect->top)
+        if((tmpLayerAttr.src_win.width != croprect->right - croprect->left)
+           ||(tmpLayerAttr.src_win.height != croprect->bottom - croprect->top)
            ||(tmpLayerAttr.src_win.x != croprect->left)
            ||(tmpLayerAttr.src_win.y != croprect->top))
         {
             //tmpLayerAttr.fb.size.width 		= croprect->right - croprect->left;
     		//tmpLayerAttr.fb.size.height 	= croprect->bottom - croprect->top;
 
-    		//tmpLayerAttr.src_win.x			= croprect->left;
-    	    //tmpLayerAttr.src_win.y			= croprect->top;
-    	    //tmpLayerAttr.src_win.width		= croprect->right - croprect->left;
-    	    //tmpLayerAttr.src_win.height		= croprect->bottom - croprect->top;
+    		tmpLayerAttr.src_win.x			= croprect->left;
+    	    tmpLayerAttr.src_win.y			= croprect->top;
+    	    tmpLayerAttr.src_win.width		= croprect->right - croprect->left;
+    	    tmpLayerAttr.src_win.height		= croprect->bottom - croprect->top;
 
-            //needset = true;
+            needset = true;
         }
 		if((ctx->hwc_layer.posX_org != displayframe->left)
            ||(ctx->hwc_layer.posY_org != displayframe->top)
@@ -740,6 +740,7 @@ static int hwc_setlayerpara(sun4i_hwc_context_t *ctx,uint32_t value)
 	__disp_pixel_mod_t			fb_mode = DISP_MOD_MB_UV_COMBINED;
 	__disp_pixel_seq_t			disp_seq;
 	__disp_cs_mode_t			disp_cs_mode;
+	bool						needUpdateCrop = false;
 	disp_seq = DISP_SEQ_UVUV;
 	if (height < 720)
 	{
@@ -754,6 +755,7 @@ static int hwc_setlayerpara(sun4i_hwc_context_t *ctx,uint32_t value)
 		case HWC_FORMAT_DEFAULT:
 			disp_format = DISP_FORMAT_YUV420;
 			fb_mode = DISP_MOD_NON_MB_UV_COMBINED;
+			needUpdateCrop = true;
 			break;
 		case HWC_FORMAT_MBYUV420:
 			disp_format = DISP_FORMAT_YUV420;
@@ -851,10 +853,14 @@ static int hwc_setlayerpara(sun4i_hwc_context_t *ctx,uint32_t value)
     tmpLayerAttr.prio               = 0xff;
     //screen window information
     //frame buffer pst and size information
-    tmpLayerAttr.src_win.x          = 0;//tmpVFrmInf->dst_rect.uStartX;
-    tmpLayerAttr.src_win.y          = 0;//tmpVFrmInf->dst_rect.uStartY;
-    tmpLayerAttr.src_win.width      = width;//tmpVFrmInf->dst_rect.uWidth;
-    tmpLayerAttr.src_win.height     = height;//tmpVFrmInf->dst_rect.uHeight;
+    if(!needUpdateCrop)
+	{
+		tmpLayerAttr.src_win.x          = 0;//tmpVFrmInf->dst_rect.uStartX;
+    	tmpLayerAttr.src_win.y          = 0;//tmpVFrmInf->dst_rect.uStartY;
+    	tmpLayerAttr.src_win.width      = width;//tmpVFrmInf->dst_rect.uWidth;
+    	tmpLayerAttr.src_win.height     = height;//tmpVFrmInf->dst_rect.uHeight;
+	}
+    
 	tmpLayerAttr.fb.b_trd_src		= ctx->cur_half_enable;
 	tmpLayerAttr.b_trd_out			= ctx->cur_3denable;
 	tmpLayerAttr.fb.trd_mode 		=  (__disp_3d_src_mode_t)ctx->cur_3dmode;

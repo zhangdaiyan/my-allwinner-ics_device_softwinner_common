@@ -31,11 +31,9 @@
 
 namespace android {
 
-#define DEVICE_BACK		"/dev/video0"
-#define DEVICE_FRONT	"/dev/video1"
 #define NB_BUFFER 4
 
-// #define PREVIEW_FMT_RGBA32
+#define PREVIEW_FMT_RGBA32 0
 
 class CameraHardware;
 
@@ -502,19 +500,23 @@ protected:
 	bool						mInPictureThread;
 	int							mPictureWidth;
 	int							mPictureHeight;
-
-	// add for CTS
-	int64_t						mStartDeliverTimeUs;
 	
 	pthread_mutex_t 			mMutexTakePhotoEnd;
 	pthread_cond_t				mCondTakePhotoEnd;
 
+	bool						mThreadRunning;	
+	pthread_mutex_t 			mMutexThreadRunning;
+	pthread_cond_t				mCondThreadRunning;
+	
 public:
 	
 	inline void setTakingPicture(bool taking)
 	{
+		pthread_mutex_lock(&mMutexTakePhotoEnd);
+		LOGD("setTakingPicture : %s", taking ? "true" : "false");
 		mInPictureThread = taking;
 		mTakingPicture = taking;
+		pthread_mutex_unlock(&mMutexTakePhotoEnd);
 	}
 	
 	inline int getPictureSize(int * pic_w, int * pic_h)
@@ -530,6 +532,18 @@ public:
 		mPictureHeight = pic_h;
 		return OK;
     }
+
+	inline void setThreadRunning(bool running)
+	{
+		pthread_mutex_lock(&mMutexThreadRunning);
+		if (!mThreadRunning)
+		{
+			LOGD("setThreadRunning true");
+			mThreadRunning = running;
+			pthread_cond_signal(&mCondThreadRunning);
+		}
+		pthread_mutex_unlock(&mMutexThreadRunning);
+	}
 
 };
 

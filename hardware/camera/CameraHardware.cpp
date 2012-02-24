@@ -65,6 +65,8 @@ CameraHardware::CameraHardware(int cameraId, struct hw_module_t* module)
           mCallbackNotifier(),
           mCameraID(cameraId),
           mCameraConfig(NULL),
+          mDefaultPreviewWidth(640),
+		  mDefaultPreviewHeight(480),
           bPixFmtNV12(false)
 {
     /*
@@ -114,6 +116,32 @@ status_t CameraHardware::Initialize()
     return NO_ERROR;
 }
 
+// Parse string like "640x480" or "10000,20000"
+static int parse_pair(const char *str, int *first, int *second, char delim,
+                      char **endptr = NULL)
+{
+    // Find the first integer.
+    char *end;
+    int w = (int)strtol(str, &end, 10);
+    // If a delimeter does not immediately follow, give up.
+    if (*end != delim) {
+        LOGE("Cannot find delimeter (%c) in str=%s", delim, str);
+        return -1;
+    }
+
+    // Find the second integer, immediately after the delimeter.
+    int h = (int)strtol(end+1, &end, 10);
+
+    *first = w;
+    *second = h;
+
+    if (endptr) {
+        *endptr = end;
+    }
+
+    return 0;
+}
+
 void CameraHardware::initDefaultParameters()
 {
     CameraParameters p = mParameters;
@@ -148,6 +176,19 @@ void CameraHardware::initDefaultParameters()
 		p.set(CameraParameters::KEY_PREVIEW_SIZE, value);
 		p.set(CameraParameters::KEY_VIDEO_SIZE, value);
 		p.set(CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO, value);
+
+		int default_w = 0, default_h = 0;
+		int ret = parse_pair(value, &default_w, &default_h, 'x', &value);
+		if (ret == 0)
+		{
+			LOGV("default size: %dx%d", default_w, default_h);
+			mDefaultPreviewWidth = default_w;
+			mDefaultPreviewHeight = default_h;
+		}
+		else
+		{
+			LOGE("parse default size failed");
+		}
 	}
 
 	LOGV("to init picture size");
@@ -272,11 +313,26 @@ void CameraHardware::initDefaultParameters()
 		value = mCameraConfig->smoothZoomSupportedValue();
 		p.set(CameraParameters::KEY_SMOOTH_ZOOM_SUPPORTED, value);
 
-		value = mCameraConfig->zoomRatiosValue();
-		p.set(CameraParameters::KEY_ZOOM_RATIOS, value);
+		// value = mCameraConfig->zoomRatiosValue();
+		// p.set(CameraParameters::KEY_ZOOM_RATIOS, value);
 
 		value = mCameraConfig->maxZoomValue();
 		p.set(CameraParameters::KEY_MAX_ZOOM, value);
+
+		int max_zoom = atoi(mCameraConfig->maxZoomValue());
+		char zoom_ratios[1024];
+		memset(zoom_ratios, 0, 1024);
+		for (int i = 0; i <= max_zoom; i++)
+		{
+			int i_ratio = 200 * i / max_zoom + 100;
+			char str[8];
+			sprintf(str, "%d,", i_ratio);
+			strcat(zoom_ratios, str);
+		}
+		int len = strlen(zoom_ratios);
+		zoom_ratios[len - 1] = 0;
+		LOGD("zoom_ratios: %s", zoom_ratios);
+		p.set(CameraParameters::KEY_ZOOM_RATIOS, zoom_ratios);
 
 		value = mCameraConfig->defaultZoomValue();
 		p.set(CameraParameters::KEY_ZOOM, value);
@@ -497,16 +553,19 @@ status_t CameraHardware::startRecording()
 	int new_video_width = 0;
 	int new_video_height = 0;
 	mParameters.getVideoSize(&new_video_width, &new_video_height);
-	
-	if (mCurPreviewWidth != new_video_width
-		|| mCurPreviewHeight != new_video_height
+
+	if (mDefaultPreviewWidth != new_video_width
+		|| mDefaultPreviewHeight != new_video_height
 		|| bPixFmtNV12)
 	{
 		doStopPreview();
-		mPreviewWindow.showLayer(false);
+		if (mPreviewWindow.isLayerShowHW())
+		{
+			mPreviewWindow.showLayer(false);			// only here to close layer
+		}
 		doStartPreview();
 	}
-	
+
     /* Callback should return a negative errno. */
     return -mCallbackNotifier.enableVideoRecording(mParameters.getPreviewFrameRate());
 }
@@ -522,19 +581,22 @@ void CameraHardware::stopRecording()
 	int new_video_width = 0;
 	int new_video_height = 0;
 	mParameters.getVideoSize(&new_video_width, &new_video_height);
-	
+
 	// do not use high size for preview
-	LOGV("last preview size: %dx%d", mLastPreviewWidth, mLastPreviewHeight);
-	mParameters.setPreviewSize(mLastPreviewWidth, mLastPreviewHeight);
-	mParameters.setVideoSize(mLastPreviewWidth, mLastPreviewHeight);
-	
-	if (mLastPreviewWidth != new_video_width
-		|| mLastPreviewHeight != new_video_height)
+	mParameters.setPreviewSize(mDefaultPreviewWidth, mDefaultPreviewHeight);
+	mParameters.setVideoSize(mDefaultPreviewWidth, mDefaultPreviewHeight);
+
+	if (mDefaultPreviewWidth != new_video_width
+		|| mDefaultPreviewHeight != new_video_height)
 	{
 		doStopPreview();
-		mPreviewWindow.showLayer(false);
+		if (mPreviewWindow.isLayerShowHW())
+		{
+			mPreviewWindow.showLayer(false);			// only here to close layer
+		}
 		doStartPreview();
 	}
+
 }
 
 int CameraHardware::isRecordingEnabled()
@@ -740,9 +802,6 @@ status_t CameraHardware::setParameters(const char* p)
          __FUNCTION__, new_preview_width, new_preview_height);
 	if (0 < new_preview_width && 0 < new_preview_height)
 	{
-		mLastPreviewWidth = mCurPreviewWidth;
-		mLastPreviewHeight = mCurPreviewHeight;
-		
 		// try size
 		ret = pV4L2Device->tryFmtSize(&new_preview_width, &new_preview_height);
 		if(ret < 0)
@@ -908,9 +967,21 @@ status_t CameraHardware::setParameters(const char* p)
 	// zoom
 	if (mCameraConfig->supportZoom())
 	{
+		int max_zoom = mParameters.getInt(CameraParameters::KEY_MAX_ZOOM);
 		int new_zoom = params.getInt(CameraParameters::KEY_ZOOM);
 		LOGV("new_zoom: %d", new_zoom);
-		mParameters.set(CameraParameters::KEY_ZOOM, new_zoom);
+		if (0 <= new_zoom && new_zoom <= max_zoom)
+		{
+			mParameters.set(CameraParameters::KEY_ZOOM, new_zoom);
+
+			mPreviewWindow.setMaxZoomValue(max_zoom);
+			mPreviewWindow.setZoomValue(new_zoom);
+		}
+		else
+		{
+			LOGE("invalid zoom value: %d", new_zoom);
+			return -EINVAL;
+		}
 	}
 
 	// focus
@@ -1138,10 +1209,6 @@ status_t CameraHardware::doStartPreview()
         return res;
     }
 
-	// save current preview size
-	mCurPreviewWidth = width;
-	mCurPreviewHeight = height;
-
     res = camera_dev->startDeliveringFrames(false);
     if (res != NO_ERROR) {
         camera_dev->stopDevice();
@@ -1191,6 +1258,8 @@ status_t CameraHardware::cleanupCamera()
 
 	mParameters.set(CameraParameters::KEY_JPEG_THUMBNAIL_WIDTH, 320);
 	mParameters.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, 240);
+
+	mParameters.set(CameraParameters::KEY_ZOOM, 0);
 	
     /* If preview is running - stop it. */
     res = doStopPreview();

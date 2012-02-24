@@ -208,12 +208,12 @@ status_t V4L2CameraDevice::startDevice(int width,
 	// front camera do not use hw preview, SW preview will mirror it
 	if (mCameraFacing == CAMERA_FACING_FRONT)
 	{
-		LOGD("do not us hw preview");
+		LOGD("do not use hw preview");
 		mPreviewUseHW = false;
 	}
 	else
 	{
-		LOGD("us hw preview");
+		LOGD("use hw preview");
 		mPreviewUseHW = true;
 	}
 	
@@ -304,13 +304,13 @@ bool V4L2CameraDevice::inWorkerThread()
 		mPrepareTakePhoto = false;
 		pthread_cond_signal(&mCondTakePhotoEnd);
 		pthread_mutex_unlock(&mMutexTakePhotoEnd);
-		return true;
+		goto EXIT_OK;
 	}
 
 	if (mInPictureThread)
 	{
 		releasePreviewFrame(v4l2_buf.index);
-		return true;
+		goto EXIT_OK;
 	}
 
 	// copy for preview
@@ -333,6 +333,10 @@ bool V4L2CameraDevice::inWorkerThread()
 	{
 		dealWithVideoFrameSW(&v4l2_buf);
 	}
+
+EXIT_OK:
+	
+	setThreadRunning(true);
 	
     return true;
 }

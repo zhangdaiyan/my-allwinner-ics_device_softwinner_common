@@ -42,6 +42,7 @@ PreviewWindow::PreviewWindow()
       mScreenID(0)
 {
 	F_LOG;
+	memset(&mRectCrop, 0, sizeof(mRectCrop));
 }
 
 PreviewWindow::~PreviewWindow()
@@ -156,6 +157,15 @@ bool PreviewWindow::onNextFrameAvailableHW(const void* frame,
 
 		mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SETFORMAT, mLayerFormat);
 		mShouldAdjustDimensions = false;
+
+		calculateCrop();
+		mPreviewWindow->set_crop(mPreviewWindow, 
+			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		LOGV("first hw: [%d, %d, %d, %d]", mRectCrop.left,
+										mRectCrop.top,
+										mRectCrop.right,
+										mRectCrop.bottom);
     }
 
 	libhwclayerpara_t overlay_para;
@@ -182,6 +192,13 @@ bool PreviewWindow::onNextFrameAvailableHW(const void* frame,
 	}
 	
 	// LOGV("addrY: %x, addrC: %x, WXH: %dx%d", overlay_para.top_y, overlay_para.top_c, mPreviewFrameWidth, mPreviewFrameHeight);
+
+	if (mZoomValue != mZoomValueLast)
+	{
+		calculateCrop();
+		mPreviewWindow->set_crop(mPreviewWindow, 
+			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+	}
 
 	res = mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SETFRAMEPARA, (uint32_t)&overlay_para);
 	if (res != OK)
@@ -220,14 +237,18 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
         LOGD("%s: Adjusting preview windows %p geometry to %dx%d",
              __FUNCTION__, mPreviewWindow, mPreviewFrameWidth,
              mPreviewFrameHeight);
+		
+#if PREVIEW_FMT_RGBA32
+		int format = HAL_PIXEL_FORMAT_RGBA_8888;
+		LOGD("preview format: HAL_PIXEL_FORMAT_RGBA_8888");
+#else
+		int format = HAL_PIXEL_FORMAT_YCrCb_420_SP;
+		LOGD("preview format: HAL_PIXEL_FORMAT_YCrCb_420_SP");
+#endif
         res = mPreviewWindow->set_buffers_geometry(mPreviewWindow,
                                                    mPreviewFrameWidth,
                                                    mPreviewFrameHeight,
-#ifdef PREVIEW_FMT_RGBA32
-                                                   HAL_PIXEL_FORMAT_RGBA_8888);
-#else
-                                                   HAL_PIXEL_FORMAT_YCrCb_420_SP);
-#endif
+												   format);
         if (res != NO_ERROR) {
             LOGE("%s: Error in set_buffers_geometry %d -> %s",
                  __FUNCTION__, -res, strerror(-res));
@@ -236,6 +257,26 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
 		mShouldAdjustDimensions = false;
 
 		res = mPreviewWindow->set_buffer_count(mPreviewWindow, 3);
+		if (res != 0) 
+		{
+	        LOGE("native_window_set_buffer_count failed: %s (%d)", strerror(-res), -res);
+
+	        if ( ENODEV == res ) {
+	            LOGE("Preview surface abandoned!");
+	            mPreviewWindow = NULL;
+	        }
+
+	        return false;
+	    }
+
+		calculateCrop();
+		mPreviewWindow->set_crop(mPreviewWindow, 
+			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		LOGV("first sw: [%d, %d, %d, %d]", mRectCrop.left,
+										mRectCrop.top,
+										mRectCrop.right,
+										mRectCrop.bottom);
     }
 
     /*
@@ -279,6 +320,13 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
         return false;
     }
 
+	if (mZoomValue != mZoomValueLast)
+	{
+		calculateCrop();
+		mPreviewWindow->set_crop(mPreviewWindow, 
+			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+	}
+
     /* Frames come in in YV12/NV12/NV21 format. Since preview window doesn't
      * supports those formats, we need to obtain the frame in RGB565. */
     res = camera_dev->getCurrentPreviewFrame(img);
@@ -289,6 +337,7 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
         LOGE("%s: Unable to obtain preview frame: %d", __FUNCTION__, res);
         mPreviewWindow->cancel_buffer(mPreviewWindow, buffer);
     }
+
     grbuffer_mapper.unlock(*buffer);
 
 	return true;
@@ -314,6 +363,19 @@ bool PreviewWindow::adjustPreviewDimensions(V4L2Camera* camera_dev)
 
 	mShouldAdjustDimensions = false;
     return true;
+}
+
+void PreviewWindow::calculateCrop()
+{
+	int new_ratio = (mZoomValue * 2 * 100 / mMaxZoomValue + 100);
+	mRectCrop.left		= (mPreviewFrameWidth - (mPreviewFrameWidth * 100) / new_ratio)/2;
+    mRectCrop.top		= (mPreviewFrameHeight - (mPreviewFrameHeight * 100) / new_ratio)/2;
+    mRectCrop.right		= mRectCrop.left + (mPreviewFrameWidth * 100) / new_ratio;
+    mRectCrop.bottom	= mRectCrop.top  + (mPreviewFrameHeight * 100) / new_ratio;
+
+	LOGD("crop: [%d, %d, %d, %d]", mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+	mZoomValueLast = mZoomValue;
 }
 
 int PreviewWindow::showLayer(bool on)

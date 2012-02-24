@@ -437,12 +437,9 @@ public:
 protected:
 	CCameraConfig * mCameraConfig;
 
-	int mCurPreviewWidth;
-	int mCurPreviewHeight;
-
-	int mLastPreviewWidth;
-	int mLastPreviewHeight;
-
+	int mDefaultPreviewWidth;
+	int mDefaultPreviewHeight;
+	
 	bool bPixFmtNV12;	// true for NV12, false for NV21
 };
 
