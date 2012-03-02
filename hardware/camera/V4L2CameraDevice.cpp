@@ -216,6 +216,8 @@ status_t V4L2CameraDevice::startDevice(int width,
 		LOGD("use hw preview");
 		mPreviewUseHW = true;
 	}
+
+	mPreviewUseHW = false;
 	
     return res;
 }

@@ -190,9 +190,9 @@ public class CatalogList {
 		/*
 		 * add by chenjd,chenjd@allwinnertech 2011-09-14
 		 * other application:mediaScanner will save its thumbnail data here, so 
-		 * I must not scan this area. 
+		 * I must not scan this area for 'picture'. 
 		 */
-		String pathToIgnored = sdcardpath + "/" + "DCIM";
+		String pathToIgnored = sdcardpath + "/" + "DCIM" + "/" + ".thumbnails";
 		
 		int i = 0;
 		

@@ -472,10 +472,11 @@ static int hwc_setrect(sun4i_hwc_context_t *ctx,hwc_rect_t *croprect,hwc_rect_t 
 
 		ret = ioctl(fd, DISP_CMD_LAYER_GET_PARA, &tmp_args);
 
-        if((tmpLayerAttr.src_win.width != croprect->right - croprect->left)
+
+        if(((tmpLayerAttr.src_win.width != croprect->right - croprect->left)
            ||(tmpLayerAttr.src_win.height != croprect->bottom - croprect->top)
            ||(tmpLayerAttr.src_win.x != croprect->left)
-           ||(tmpLayerAttr.src_win.y != croprect->top))
+           ||(tmpLayerAttr.src_win.y != croprect->top)) && (tmpLayerAttr.fb.mode == DISP_MOD_NON_MB_UV_COMBINED))
         {
             //tmpLayerAttr.fb.size.width 		= croprect->right - croprect->left;
     		//tmpLayerAttr.fb.size.height 	= croprect->bottom - croprect->top;

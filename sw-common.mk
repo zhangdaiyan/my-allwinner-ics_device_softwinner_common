@@ -20,5 +20,9 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/common/rild/usb_modeswitch:system/bin/usb_modeswitch \
 	device/softwinner/common/rild/liballwinner-ril.so:system/lib/liballwinner-ril.so
 
+#media
+PRODUCT_COPY_FILES += \
+	device/softwinner/common/media/libstagefright_soft_cedar_h264dec.so:system/lib/libstagefright_soft_cedar_h264dec.so
+
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/common/rild/usb_modeswitch.d,system/etc/usb_modeswitch.d)

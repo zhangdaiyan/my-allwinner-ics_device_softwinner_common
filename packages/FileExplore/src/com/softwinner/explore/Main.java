@@ -814,6 +814,10 @@ public final class Main extends ListActivity {
     	
     	boolean multi_data = mHandler.hasMultiSelectData();
     	AdapterContextMenuInfo _info = (AdapterContextMenuInfo)info;
+    	if(info == null)
+    	{
+    		return;
+    	}
     	mSelectedListItem = mHandler.getData(_info.position);
     	
     	if(mHandler.getMode() != EventHandler.TREEVIEW_MODE)

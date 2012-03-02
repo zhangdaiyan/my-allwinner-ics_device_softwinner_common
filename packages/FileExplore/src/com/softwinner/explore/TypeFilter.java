@@ -127,7 +127,6 @@ public final class TypeFilter{
                 ext.equalsIgnoreCase("flv") ||
                 ext.equalsIgnoreCase("pmp") ||
                 ext.equalsIgnoreCase("vob") ||
-                ext.equalsIgnoreCase("dat") ||
                 ext.equalsIgnoreCase("asf") ||
                 ext.equalsIgnoreCase("psr") ||
                 ext.equalsIgnoreCase("3gp") ||
