@@ -172,30 +172,22 @@ public:
 	{
 		return (mLayerShowHW == 1) ? true : false;
 	}
-	
-	inline void setZoomValue(int zoom)
+
+	inline void setCrop(Rect * rc, int zoom_value)
 	{
-		mZoomValue = zoom;
-	}
-	
-	inline void setMaxZoomValue(int zoom)
-	{
-		mMaxZoomValue = zoom;
+		mNewCrop = true;
+		memcpy(&mRectCrop, rc, sizeof(Rect));
 	}
 
-	void calculateCrop();
-	
 protected:
 	bool							mOverlayFirstFrame;
 	bool							mShouldAdjustDimensions;
 	int								mLayerShowHW;
 	int								mLayerFormat;
 	int								mScreenID;
-	
+
+	bool							mNewCrop;
 	Rect							mRectCrop;
-	int								mZoomValue;
-	int								mZoomValueLast;
-	int								mMaxZoomValue;
 };
 
 }; /* namespace android */

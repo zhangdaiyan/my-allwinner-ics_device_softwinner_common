@@ -36,7 +36,7 @@ unsigned int                    g_lcd_width        = 480;
 unsigned int                    g_lcd_height       = 800;
 unsigned int                    g_lcd_bpp          = 32;
 
-unsigned long                   args[4];
+
 unsigned long 				    fb_layer_hdl;
 
 
@@ -68,7 +68,8 @@ static int hwc_setcolorkey(sun4i_hwc_context_t  *ctx)
 	__disp_colorkey_t 			ck;
     int                         ret;
     int                         fd;
-    
+	unsigned long                   args[4]={0};   
+	 
 	if(ctx->hwc_layer.currenthandle)
 	{
 		args[0]							= ctx->hwc_screen;
@@ -168,7 +169,8 @@ static int hwc_setcolorkey(sun4i_hwc_context_t  *ctx)
 static int hwc_requestlayer(sun4i_hwc_context_t *ctx,uint32_t screenid)
 {
 	uint32_t			layerhandle;
-	
+  unsigned long                   args[4]={0};
+  
 	if(ctx->dispfd == 0)
 	{
 		ctx->dispfd 			    = open("/dev/disp", O_RDWR);
@@ -247,6 +249,7 @@ static void hwc_computerlayerdisplayframe(hwc_composer_device_t *dev)
     int                         scn_w;
     int                         scn_h;
     int							ret;
+    unsigned long                   args[4]={0};
 	
 	if(!ctx)
 	{
@@ -452,7 +455,8 @@ static int hwc_setrect(sun4i_hwc_context_t *ctx,hwc_rect_t *croprect,hwc_rect_t 
     int                         fd;
     int                         ret = 0;
     int                         screen;
-    bool                        needset = false;                         
+    bool                        needset = false;   
+    unsigned long                   args[4]={0};                      
     
     LOGV("hwc_setcrop");
 
@@ -462,7 +466,7 @@ static int hwc_setrect(sun4i_hwc_context_t *ctx,hwc_rect_t *croprect,hwc_rect_t 
     
     if(ctx->hwc_layer.currenthandle)
    	{
-	    unsigned long			tmp_args[4];
+	    unsigned long			tmp_args[4]={0};
 		__disp_layer_info_t		tmpLayerAttr;
 
 		tmp_args[0] 			= screen;
@@ -570,6 +574,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
 static int hwc_startset(hwc_composer_device_t *dev)
 {
 	sun4i_hwc_context_t   		*ctx = (sun4i_hwc_context_t *)dev;
+	unsigned long                   args[4]={0};
 	
 	if(ctx->dispfd == 0)
 	{
@@ -590,6 +595,7 @@ static int hwc_startset(hwc_composer_device_t *dev)
 static int hwc_endset(hwc_composer_device_t *dev)
 {
 	sun4i_hwc_context_t   		*ctx = (sun4i_hwc_context_t *)dev;
+	unsigned long                   args[4]={0};
 	
 	if(ctx->dispfd == 0)
 	{
@@ -616,6 +622,7 @@ static int hwc_setlayerframepara(sun4i_hwc_context_t *ctx,uint32_t value)
     __disp_layer_info_t         layer_info;
     int                         ret;
     int                         screen;
+    unsigned long                   args[4]={0};
 	
 	if(!ctx)
 	{
@@ -742,6 +749,8 @@ static int hwc_setlayerpara(sun4i_hwc_context_t *ctx,uint32_t value)
 	__disp_pixel_seq_t			disp_seq;
 	__disp_cs_mode_t			disp_cs_mode;
 	bool						needUpdateCrop = false;
+	unsigned long                   args[4]={0};
+	
 	disp_seq = DISP_SEQ_UVUV;
 	if (height < 720)
 	{
@@ -903,6 +912,7 @@ static int hwc_show(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_show, value: %d", value);
 
@@ -963,6 +973,7 @@ static int hwc_reqshow(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_show, value: %d", value);
 
@@ -1053,6 +1064,7 @@ static int hwc_release(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_release!ctx->hwc_layer.currenthandle = %d\n",ctx->hwc_layer.currenthandle);
 
@@ -1116,6 +1128,7 @@ static int hwc_setformat(sun4i_hwc_context_t *ctx,uint32_t value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_setformat");
 
@@ -1125,7 +1138,7 @@ static int hwc_setformat(sun4i_hwc_context_t *ctx,uint32_t value)
     
     if(ctx->hwc_layer.currenthandle)
    	{
-	    unsigned long			tmp_args[4];
+	    unsigned long			tmp_args[4]={0};
 		__disp_layer_info_t		tmpLayerAttr;
 
 		tmp_args[0] 			= screen;
@@ -1155,6 +1168,7 @@ static int hwc_setscreen(sun4i_hwc_context_t *ctx,uint32_t value)
 	uint32_t					overlay_handle;
 	void*						overlayhandle;
     int    						ctl_fd;
+    unsigned long                   args[4]={0};
 
     overlay_handle				= ctx->hwc_layer.currenthandle;
     LOGV("overlay_handle = %d\n",(unsigned long)overlay_handle);
@@ -1318,6 +1332,7 @@ static int hwc_vppon(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1353,6 +1368,7 @@ static int hwc_getvppon(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1380,6 +1396,7 @@ static int hwc_setlumasharp(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1407,6 +1424,7 @@ static int hwc_getlumasharp(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1434,6 +1452,7 @@ static int hwc_setchromasharp(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1461,6 +1480,7 @@ static int hwc_getchromasharp(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1488,6 +1508,7 @@ static int hwc_setwhiteexten(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1515,6 +1536,7 @@ static int hwc_getwhiteexten(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1542,6 +1564,7 @@ static int hwc_setblackexten(sun4i_hwc_context_t *ctx,int value)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1569,6 +1592,7 @@ static int hwc_getblackexten(sun4i_hwc_context_t *ctx)
     int                         fd;
     int                         ret = 0;
     int                         screen;
+    unsigned long                   args[4]={0};
     
     LOGV("hwc_vppon");
 
@@ -1604,6 +1628,7 @@ static int hwc_set3dmode(sun4i_hwc_context_t *ctx,int para)
 	__disp_layer_info_t 		layer_info;
 	layerinitpara_t				layer_para;
 	video3Dinfo_t 				*_3d_info;
+	unsigned long                   args[4]={0};
 
 	LOGV("overlay_show");
 
@@ -1815,6 +1840,7 @@ static int hwc_setparameter(hwc_composer_device_t *dev,uint32_t param,uint32_t v
 	int 						ret = 0;
     sun4i_hwc_context_t   		*ctx = (sun4i_hwc_context_t *)dev;
     int    						ctl_fd;
+    unsigned long                   args[4]={0};
 	
     ctl_fd   = ctx->dispfd;	
     if(param == HWC_LAYER_SETINITPARA)
@@ -1831,6 +1857,8 @@ static int hwc_setparameter(hwc_composer_device_t *dev,uint32_t param,uint32_t v
     }
     else if(param == HWC_LAYER_GETCURFRAMEPARA)
     {
+    	args[0] = ctx->hwc_screen;
+    	args[1] = ctx->hwc_layer.currenthandle;
     	ret = ioctl(ctl_fd, DISP_CMD_VIDEO_GET_FRAME_ID, args);
     	if(ret == -1)
     	{
@@ -1970,6 +1998,8 @@ static int hwc_device_close(struct hw_device_t *dev)
 {
     sun4i_hwc_context_t* ctx = (sun4i_hwc_context_t*)dev;
     int ret;
+    unsigned long                   args[4]={0};
+    
     if (ctx) 
     {
         if(ctx->hwc_layer.currenthandle)

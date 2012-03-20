@@ -62,34 +62,36 @@ function make-all()
 function copy_android_modify_tool_files()
 {
 # sun4i chip
-	VENDOR=$(gettop)/../lichee/tools/pack/chips/sun4i/wboot/bootfs/vendor
-	rm $VENDOR -rf
-	mkdir $VENDOR
-	mkdir $VENDOR/system
-	mkdir $VENDOR/system/media
-	mkdir $VENDOR/system/usr
-	mkdir $VENDOR/system/usr/keylayout
-#	cp $OUT/root/initlogo.rle $VENDOR/
-#	cp $OUT/root/*.rc $VENDOR/
-	cp $OUT/system/build.prop $VENDOR/system
-	cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
-	cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
+	SUN4I_DIR=$(gettop)/../lichee/tools/pack/chips/sun4i
+	if [ -d $SUN4I_DIR ] ; then
+		VENDOR=$(gettop)/../lichee/tools/pack/chips/sun4i/wboot/bootfs/vendor
+		rm $VENDOR -rf
+		mkdir $VENDOR
+		mkdir $VENDOR/system
+		mkdir $VENDOR/system/media
+		mkdir $VENDOR/system/usr
+		mkdir $VENDOR/system/usr/keylayout
+		cp $OUT/system/build.prop $VENDOR/system
+		cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
+		cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
+		echo "android modify tools files sun4i copied!"
+	fi
 
 # sun5i chip
-	VENDOR=$(gettop)/../lichee/tools/pack/chips/sun5i/wboot/bootfs/vendor
-	rm $VENDOR -rf
-	mkdir $VENDOR
-	mkdir $VENDOR/system
-	mkdir $VENDOR/system/media
-	mkdir $VENDOR/system/usr
-	mkdir $VENDOR/system/usr/keylayout
-#	cp $OUT/root/initlogo.rle $VENDOR/
-#	cp $OUT/root/*.rc $VENDOR/
-	cp $OUT/system/build.prop $VENDOR/system
-	cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
-	cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
-
-	echo "android modify tools files copied!"
+	SUN5I_DIR=$(gettop)/../lichee/tools/pack/chips/sun5i
+	if [ -d $SUN5I_DIR ] ; then
+		VENDOR=$(gettop)/../lichee/tools/pack/chips/sun5i/wboot/bootfs/vendor
+		rm $VENDOR -rf
+		mkdir $VENDOR
+		mkdir $VENDOR/system
+		mkdir $VENDOR/system/media
+		mkdir $VENDOR/system/usr
+		mkdir $VENDOR/system/usr/keylayout
+		cp $OUT/system/build.prop $VENDOR/system
+		cp $OUT/system/media/bootanimation.zip $VENDOR/system/media
+		cp $OUT/system/usr/keylayout/*.kl $VENDOR/system/usr/keylayout
+		echo "android modify tools files sun5i copied!"
+	fi
 
 }
 

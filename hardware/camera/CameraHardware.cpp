@@ -422,6 +422,12 @@ void CameraHardware::onCameraDeviceError(int err)
     mCallbackNotifier.onCameraDeviceError(err);
 }
 
+void CameraHardware::setCrop(Rect * rect, int new_zoom)
+{
+	F_LOG;
+	mPreviewWindow.setCrop(rect, new_zoom);
+}
+
 /****************************************************************************
  * Camera API implementation.
  ***************************************************************************/
@@ -596,7 +602,6 @@ void CameraHardware::stopRecording()
 		}
 		doStartPreview();
 	}
-
 }
 
 int CameraHardware::isRecordingEnabled()
@@ -973,9 +978,7 @@ status_t CameraHardware::setParameters(const char* p)
 		if (0 <= new_zoom && new_zoom <= max_zoom)
 		{
 			mParameters.set(CameraParameters::KEY_ZOOM, new_zoom);
-
-			mPreviewWindow.setMaxZoomValue(max_zoom);
-			mPreviewWindow.setZoomValue(new_zoom);
+			getCameraDevice()->setCrop(new_zoom, max_zoom);
 		}
 		else
 		{

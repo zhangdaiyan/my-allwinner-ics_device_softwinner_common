@@ -412,8 +412,23 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 		{
 			jpeg_enc.enable_gps			= 0;
 		}
+
+		if ((pbuf->crop_rect.width != jpeg_enc.src_w)
+			|| (pbuf->crop_rect.height != jpeg_enc.src_h))
+		{
+			jpeg_enc.enable_crop		= 1;
+			jpeg_enc.crop_x				= pbuf->crop_rect.left;
+			jpeg_enc.crop_y				= pbuf->crop_rect.top;
+			jpeg_enc.crop_w				= pbuf->crop_rect.width;
+			jpeg_enc.crop_h				= pbuf->crop_rect.height;
+		}
+		else
+		{
+			jpeg_enc.enable_crop		= 0;
+		}
 		
-		LOGD("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d, Gps method: %s, thumbW: %d, thumbH: %d, thubmFactor: %d", 
+		LOGD("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d, Gps method: %s, \
+			thumbW: %d, thumbH: %d, thubmFactor: %d, crop: [%d, %d, %d, %d]", 
 			jpeg_enc.addrY, 
 			jpeg_enc.src_w, jpeg_enc.src_h,
 			jpeg_enc.pic_w, jpeg_enc.pic_h,
@@ -421,7 +436,11 @@ void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
 			jpeg_enc.gps_processing_method,
 			jpeg_enc.thumbWidth,
 			jpeg_enc.thumbHeight,
-			jpeg_enc.scale_factor);
+			jpeg_enc.scale_factor,
+			jpeg_enc.crop_x,
+			jpeg_enc.crop_y,
+			jpeg_enc.crop_w,
+			jpeg_enc.crop_h);
 		
 		pOutBuf = (void *)malloc(jpeg_enc.pic_w * jpeg_enc.pic_h << 2);
 		if (pOutBuf == NULL)

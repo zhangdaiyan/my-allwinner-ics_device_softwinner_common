@@ -103,4 +103,5 @@
     <string name="Alphabetical">Alphabetical</string>
     <string name="Type">Type</string>
     
+    <string name="Activity_No_Found">can not find this app</string>
 </resources>

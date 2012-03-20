@@ -22,6 +22,7 @@
  * a fake camera device.
  */
 
+#include <ui/Rect.h>
 #include "Converters.h"
 #include "V4L2Camera.h"
 #include <type_camera.h>
@@ -117,6 +118,13 @@ public:
 	
 	void waitPrepareTakePhoto();
 	
+	inline void setCrop(int new_zoom, int max_zoom)
+	{
+		mLastZoom = mNewZoom;
+		mNewZoom = new_zoom;
+		mMaxZoom = max_zoom;
+	}
+	
 private:
 	int openCameraDev();
 	void closeCameraDev();
@@ -193,6 +201,11 @@ private:
 
 	pthread_mutex_t					mMutexTakePhoto;
 	pthread_cond_t					mCondTakePhoto;
+	
+	Rect							mRectCrop;
+	int								mNewZoom;
+	int								mLastZoom;
+	int								mMaxZoom;
 };
 
 }; /* namespace android */

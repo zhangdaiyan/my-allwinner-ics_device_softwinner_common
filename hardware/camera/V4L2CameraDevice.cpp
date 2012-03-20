@@ -48,13 +48,18 @@ V4L2CameraDevice::V4L2CameraDevice(CameraHardwareDevice* camera_hal, int id)
       mLastPreviewed(0),
       mPreviewAfter(0), 
       mPreviewBufferID(0),
-      mPrepareTakePhoto(false)
+      mPrepareTakePhoto(false),
+	  mNewZoom(0),
+	  mLastZoom(0),
+	  mMaxZoom(0)
 {
 	F_LOG;
 	memset(mDeviceName, 0, sizeof(mDeviceName));
 	
 	pthread_mutex_init(&mMutexTakePhoto, NULL);
 	pthread_cond_init(&mCondTakePhoto, NULL);
+
+	memset(&mRectCrop, 0, sizeof(Rect));
 }
 
 V4L2CameraDevice::~V4L2CameraDevice()
@@ -247,6 +252,17 @@ status_t V4L2CameraDevice::stopDevice()
     return NO_ERROR;
 }
 
+static void calculateCrop(Rect * rect, int new_zoom, int max_zoom, int width, int height)
+{
+	int new_ratio = (new_zoom * 2 * 100 / max_zoom + 100);
+	rect->left		= (width - (width * 100) / new_ratio)/2;
+    rect->top		= (height - (height * 100) / new_ratio)/2;
+    rect->right		= rect->left + (width * 100) / new_ratio;
+    rect->bottom	= rect->top  + (height * 100) / new_ratio;
+
+	// LOGD("crop: [%d, %d, %d, %d]", rect->left, rect->top, rect->right, rect->bottom);
+}
+
 /****************************************************************************
  * Worker thread management overrides.
  ***************************************************************************/
@@ -275,11 +291,18 @@ bool V4L2CameraDevice::inWorkerThread()
 	// mCurFrameTimestamp = systemTime(SYSTEM_TIME_MONOTONIC);
 	mCurFrameTimestamp = (int64_t)((int64_t)buf.timestamp.tv_usec + (((int64_t)buf.timestamp.tv_sec) * 1000000));
 
+	calculateCrop(&mRectCrop, mNewZoom, mMaxZoom, mFrameWidth, mFrameHeight);
+	mCameraHAL->setCrop(&mRectCrop, mNewZoom);
+
 	// V4L2BUF_t for preview and HW encoder
 	V4L2BUF_t v4l2_buf;
-	v4l2_buf.addrPhyY	= buf.m.offset;
-	v4l2_buf.index		= buf.index;
-	v4l2_buf.timeStamp	= mCurFrameTimestamp;
+	v4l2_buf.addrPhyY			= buf.m.offset;
+	v4l2_buf.index				= buf.index;
+	v4l2_buf.timeStamp			= mCurFrameTimestamp;
+	v4l2_buf.crop_rect.left		= mRectCrop.left;
+	v4l2_buf.crop_rect.top		= mRectCrop.top;
+	v4l2_buf.crop_rect.width	= mRectCrop.right - mRectCrop.left;
+	v4l2_buf.crop_rect.height	= mRectCrop.bottom - mRectCrop.top;
 
 	// LOGV("DQBUF: addrPhyY: %x, id: %d, time: %lld", v4l2_buf.addrPhyY, buf.index, mCurFrameTimestamp);
 
@@ -431,15 +454,12 @@ int V4L2CameraDevice::openCameraDev()
 		return -1; 
 	} 
 
-	if (mDeviceID == 1)
+	struct v4l2_input inp;
+	inp.index = mDeviceID;
+	if (-1 == ioctl (mCamFd, VIDIOC_S_INPUT, &inp))
 	{
-		struct v4l2_input inp;
-		inp.index = 1;
-		if (-1 == ioctl (mCamFd, VIDIOC_S_INPUT, &inp))
-		{
-			LOGE("VIDIOC_S_INPUT error!\n");
-			return -1;
-		}
+		LOGE("VIDIOC_S_INPUT error!\n");
+		return -1;
 	}
 
 	// check v4l2 device capabilities

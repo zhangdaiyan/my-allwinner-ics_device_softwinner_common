@@ -196,6 +196,13 @@ public final class Main extends ListActivity {
         			getFocusForButton(R.id.home_flash_button);
         		}
         	}
+			else
+			{
+				//default path        	
+	        	mPathLabel.setText(mDevicePath.getInterStoragePath());
+	        	mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_SDCARD));
+	        	getFocusForButton(R.id.home_sdcard_button);
+			}
         }
         else { 
         	//default path        	
@@ -526,6 +533,10 @@ public final class Main extends ListActivity {
 	    				
 	    			} else {
 			    		Intent movieIntent = new Intent();
+			    		
+			    		//add by Bevis, for VideoPlayer to create playlist
+			    		movieIntent.putExtra(MediaStore.PLAYLIST_TYPE, MediaStore.PLAYLIST_TYPE_CUR_FOLDER);
+			    		
 			    		movieIntent.putExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, false);
 			    		movieIntent.setAction(android.content.Intent.ACTION_VIEW);
 			    		movieIntent.setDataAndType(Uri.fromFile(file), "video/*");
@@ -885,12 +896,18 @@ public final class Main extends ListActivity {
     		case F_MENU_ATTACH:
     			File file = new File(mFileMag.getCurrentDir() +"/"+ mSelectedListItem);
     			Intent mail_int = new Intent();
-    			
     			mail_int.setAction(android.content.Intent.ACTION_SEND);
     			mail_int.setType("application/mail");
     			mail_int.putExtra(Intent.EXTRA_BCC, "");
     			mail_int.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-    			startActivity(mail_int);
+    			try{
+    				startActivity(mail_int);
+    			}
+    			catch(ActivityNotFoundException e)
+    			{
+    				DisplayToast(getResources().getString(R.string.Activity_No_Found));
+    				Log.e(TAG,"activity no found");
+    			}
     			return true;
     		
     		case F_MENU_MOVE:

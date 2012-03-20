@@ -103,4 +103,5 @@
     <string name="Alphabetical">"按字母"</string>
     <string name="Type">"按类型"</string>
     
+    <string name="Activity_No_Found">"还没安装该应用"</string>
 </resources>

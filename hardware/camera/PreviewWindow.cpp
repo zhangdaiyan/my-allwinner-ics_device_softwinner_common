@@ -39,7 +39,8 @@ PreviewWindow::PreviewWindow()
       mOverlayFirstFrame(true),
       mShouldAdjustDimensions(true),
       mLayerFormat(-1),
-      mScreenID(0)
+      mScreenID(0),
+      mNewCrop(false)
 {
 	F_LOG;
 	memset(&mRectCrop, 0, sizeof(mRectCrop));
@@ -158,9 +159,10 @@ bool PreviewWindow::onNextFrameAvailableHW(const void* frame,
 		mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SETFORMAT, mLayerFormat);
 		mShouldAdjustDimensions = false;
 
-		calculateCrop();
 		mPreviewWindow->set_crop(mPreviewWindow, 
 			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		mNewCrop = false;
 
 		LOGV("first hw: [%d, %d, %d, %d]", mRectCrop.left,
 										mRectCrop.top,
@@ -193,11 +195,12 @@ bool PreviewWindow::onNextFrameAvailableHW(const void* frame,
 	
 	// LOGV("addrY: %x, addrC: %x, WXH: %dx%d", overlay_para.top_y, overlay_para.top_c, mPreviewFrameWidth, mPreviewFrameHeight);
 
-	if (mZoomValue != mZoomValueLast)
+	if (mNewCrop)
 	{
-		calculateCrop();
 		mPreviewWindow->set_crop(mPreviewWindow, 
 			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		mNewCrop = false;
 	}
 
 	res = mPreviewWindow->perform(mPreviewWindow, NATIVE_WINDOW_SETPARAMETER, HWC_LAYER_SETFRAMEPARA, (uint32_t)&overlay_para);
@@ -269,9 +272,10 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
 	        return false;
 	    }
 
-		calculateCrop();
 		mPreviewWindow->set_crop(mPreviewWindow, 
 			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		mNewCrop = false;
 
 		LOGV("first sw: [%d, %d, %d, %d]", mRectCrop.left,
 										mRectCrop.top,
@@ -320,11 +324,12 @@ bool PreviewWindow::onNextFrameAvailableSW(const void* frame,
         return false;
     }
 
-	if (mZoomValue != mZoomValueLast)
+	if (mNewCrop)
 	{
-		calculateCrop();
 		mPreviewWindow->set_crop(mPreviewWindow, 
 			mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
+
+		mNewCrop = false;
 	}
 
     /* Frames come in in YV12/NV12/NV21 format. Since preview window doesn't
@@ -363,19 +368,6 @@ bool PreviewWindow::adjustPreviewDimensions(V4L2Camera* camera_dev)
 
 	mShouldAdjustDimensions = false;
     return true;
-}
-
-void PreviewWindow::calculateCrop()
-{
-	int new_ratio = (mZoomValue * 2 * 100 / mMaxZoomValue + 100);
-	mRectCrop.left		= (mPreviewFrameWidth - (mPreviewFrameWidth * 100) / new_ratio)/2;
-    mRectCrop.top		= (mPreviewFrameHeight - (mPreviewFrameHeight * 100) / new_ratio)/2;
-    mRectCrop.right		= mRectCrop.left + (mPreviewFrameWidth * 100) / new_ratio;
-    mRectCrop.bottom	= mRectCrop.top  + (mPreviewFrameHeight * 100) / new_ratio;
-
-	LOGD("crop: [%d, %d, %d, %d]", mRectCrop.left, mRectCrop.top, mRectCrop.right, mRectCrop.bottom);
-
-	mZoomValueLast = mZoomValue;
 }
 
 int PreviewWindow::showLayer(bool on)

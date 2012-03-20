@@ -433,6 +433,8 @@ public:
 	bool isUseMetaDataBufferMode();
 
 	void onTakingPicture(const void* frame, V4L2Camera* camera_dev, bool bUseMataData);
+	
+	void setCrop(Rect * rect, int new_zoom);
 
 protected:
 	CCameraConfig * mCameraConfig;
