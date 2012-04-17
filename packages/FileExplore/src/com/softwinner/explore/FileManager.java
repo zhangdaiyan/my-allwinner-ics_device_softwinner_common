@@ -299,9 +299,9 @@ public class FileManager {
 		String org_path = fromDir + "/" + zipName;
 		String dest_path = toDir + zipName.substring(0, zipName.length() - 4);
 		String zipDir = dest_path + "/";
-				
-		new File(zipDir).mkdir();
 		
+		new File(zipDir).mkdir();
+		Log.d("chen","------------------------------------1");
 		try {
 			zipstream = new ZipInputStream(new FileInputStream(org_path));
 			

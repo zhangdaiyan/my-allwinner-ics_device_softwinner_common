@@ -74,7 +74,7 @@ import android.widget.Toast;
  * @author Joe Berria
  *
  */
-public final class Main extends ListActivity {
+public final class Main extends ListActivity implements FileOperateCallbacks{
 	private static final String PREFS_NAME = "ManagerPrefsFile";	//user preference file name
 	private static final String PREFS_HIDDEN = "hidden";
 	private static final String PREFS_COLOR = "color";
@@ -151,7 +151,7 @@ public final class Main extends ListActivity {
         mCataList = new CatalogList(this);
         mDevicePath = new DevicePath(this);
         
-        mHandler = new EventHandler(Main.this, mFileMag,mCataList);
+        mHandler = new EventHandler(Main.this, this, mFileMag,mCataList);
         mHandler.setTextColor(color);
         mHandler.setShowThumbnails(thumb);
         mTable = mHandler.new TableRow();
@@ -218,7 +218,7 @@ public final class Main extends ListActivity {
         					   R.id.manage_button, R.id.multiselect_button,
         					   R.id.image_button,R.id.movie_button};
         
-        int[] button_id = {R.id.hidden_copy, R.id.hidden_attach,
+        int[] button_id = {R.id.hidden_paste, R.id.hidden_copy, R.id.hidden_attach,
         				   R.id.hidden_delete, R.id.hidden_move};
         
         ImageButton[] bimg = new ImageButton[img_button_id.length];
@@ -228,7 +228,7 @@ public final class Main extends ListActivity {
         	bimg[i] = (ImageButton)findViewById(img_button_id[i]);
         	bimg[i].setOnClickListener(mHandler);
 
-        	if(i < 4) {
+        	if(i < 5) {
         		bt[i] = (Button)findViewById(button_id[i]);
         		bt[i].setOnClickListener(mHandler);
         	}
@@ -554,7 +554,7 @@ public final class Main extends ListActivity {
 	    		} else {
 		    		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		    		AlertDialog alert;
-		    		mZippedTarget = mFileMag.getCurrentDir() + "/" + item;
+		    		mZippedTarget = item;
 		    		CharSequence[] option = {"Extract here", "Extract to..."};
 		    		
 		    		builder.setTitle("Extract");
@@ -950,7 +950,27 @@ public final class Main extends ListActivity {
     				String current_dir = mFileMag.getCurrentDir() + "/" + mSelectedListItem + "/";
     				String old_dir = mZippedTarget.substring(0, mZippedTarget.lastIndexOf("/"));
     				String name = mZippedTarget.substring(mZippedTarget.lastIndexOf("/") + 1, mZippedTarget.length());
+    				File f = new File(mZippedTarget);
+    				File fd = new File(current_dir);
+    				Log.d("chen","----------------my unzip target " + f.getAbsolutePath());
     				
+    				if(f.canRead())
+    				{
+    					Log.d("chen","--------------------can read------------------------");
+    				}
+    				else
+    				{
+    					Log.d("chen","---------------------can not read---------------------");
+    				}
+    				Log.d("chen","----------------to path " + fd.getAbsolutePath());
+    				if(fd.canWrite())
+    				{
+    					Log.d("chen","----------------------can write------------------------");
+    				}
+    				else
+    				{
+    					Log.d("chen","----------------------can not write-----------------------");
+    				}
     				if(new File(mZippedTarget).canRead() && new File(current_dir).canWrite()) {
 	    				mHandler.unZipFileToDir(name, current_dir, old_dir);				
 	    				mPathLabel.setText(current_dir);
@@ -1144,4 +1164,20 @@ public final class Main extends ListActivity {
     	}
     	return false;
     }
+
+	@Override
+	public void paste(String destination) {
+		boolean multi_select = mHandler.hasMultiSelectData();
+		
+		if(multi_select) {
+			mHandler.copyFileMultiSelect(destination);
+			
+		} else if(mHoldingFile && mCopiedTarget.length() > 1) {
+			Log.d("chen","copy simgle file " + mCopiedTarget);
+			mHandler.copyFile(mCopiedTarget, destination);
+			mDetailLabel.setText("");
+		}
+		    			   			
+		mHoldingFile = false;
+	}
 }

@@ -1,0 +1,133 @@
+package com.softwinner.update.ui;
+
+import com.softwinner.update.OtaUpgradeUtils;
+import com.softwinner.update.R;
+
+import android.content.Context;
+import android.os.Handler;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LayoutAnimationController;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+public class InstallPackage extends LinearLayout implements OtaUpgradeUtils.ProgressListener{
+    
+    private ProgressBar mProgressBar;
+    private OtaUpgradeUtils mUpdateUtils;
+    private LinearLayout mOutputField;
+    private LayoutInflater mInflater;
+    private String mPackagePath;
+    private Handler mHandler = new Handler();
+
+    public InstallPackage(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mUpdateUtils = new OtaUpgradeUtils(context);
+        mInflater = LayoutInflater.from(context);
+    }
+    
+    public void setPackagePath(String path){
+        mPackagePath = path;
+    }
+    
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        mProgressBar = (ProgressBar) findViewById(R.id.verify_progress);
+        mOutputField = (LinearLayout) findViewById(R.id.output_field);
+        final TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+        tv.setText(R.string.install_ota_output_confirm);
+        mOutputField.addView(tv);
+        Animation animation = new AlphaAnimation(0.0f,1.0f);
+        animation.setDuration(600);
+        LayoutAnimationController controller = 
+            new LayoutAnimationController(animation);
+        mOutputField.setLayoutAnimation(controller);
+        findViewById(R.id.confirm_update).setOnClickListener(new View.OnClickListener() {            
+            @Override
+            public void onClick(View v) {
+                tv.setText(R.string.install_ota_output_start);
+                new Thread(new Runnable(){
+                    @Override
+                    public void run() {                        
+                        mUpdateUtils.upgradeFromOta(mPackagePath, InstallPackage.this);
+                    }            
+                }).start();
+            }
+        });
+    }
+    
+    public void deleteSource(boolean b){
+        mUpdateUtils.deleteSource(b);
+    }
+
+    @Override
+    public void onProgress(final int progress) {
+        mHandler.post(new Runnable(){
+
+            @Override
+            public void run() {
+                if(progress == 0){
+                    TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                    tv.setText(R.string.install_ota_output_checking);
+                    mOutputField.addView(tv);
+                }else if(progress == 100){
+                    TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                    tv.setText(R.string.install_ota_output_check_ok);
+                    mOutputField.addView(tv);
+                }
+                mProgressBar.setProgress(progress/2);                
+            }            
+        });        
+    }
+
+    @Override
+    public void onVerifyFailed(int errorCode, Object object) {
+        mHandler.post(new Runnable(){
+            @Override
+            public void run() {
+                TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                tv.setText(R.string.install_ota_output_check_error);
+                mOutputField.addView(tv);
+            }}
+        );        
+    }
+
+    @Override
+    public void onCopyProgress(final int progress) {
+        mHandler.post(new Runnable(){
+            @Override
+            public void run() {
+                if(progress == 0){
+                    TextView tv1 = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                    tv1.setText(R.string.install_ota_output_copying);
+                    mOutputField.addView(tv1);
+                }else if(progress == 100){
+                    TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                    tv.setText(R.string.install_ota_output_copy_ok);
+                    mOutputField.addView(tv);
+                    tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                    tv.setText(R.string.install_ota_output_restart);
+                    mOutputField.addView(tv);
+                }        
+                mProgressBar.setProgress(50 + progress/2);
+            }            
+        });        
+    }
+
+    @Override
+    public void onCopyFailed(int errorCode, Object object) {
+        mHandler.post(new Runnable(){
+            @Override
+            public void run() {
+                TextView tv = (TextView) mInflater.inflate(R.layout.medium_text, null);
+                tv.setText(R.string.install_ota_output_copy_failed);
+                mOutputField.addView(tv);                
+            }            
+        });        
+    }
+}

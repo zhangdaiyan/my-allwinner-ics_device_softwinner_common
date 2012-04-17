@@ -24,6 +24,7 @@
     <string name="Attach">"連接"</string>
     <string name="Delete">"刪除"</string>
     <string name="Copy">"復制"</string>
+    <string name="Paste">"粘貼"</string>
     <string name="Move">"剪切"</string>
     <string name="Display">"顯示"</string>
     <string name="Text_color">"文本顏色"</string>

@@ -24,6 +24,7 @@
     <string name="Attach">Attach</string>
     <string name="Delete">Delete</string>
     <string name="Copy">Copy</string>
+    <string name="Paste">Paste</string>
     <string name="Move">Move</string>
     <string name="Display">Display</string>
     <string name="Text_color">Text color</string>

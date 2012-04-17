@@ -51,7 +51,7 @@ V4L2CameraDevice::V4L2CameraDevice(CameraHardwareDevice* camera_hal, int id)
       mPrepareTakePhoto(false),
 	  mNewZoom(0),
 	  mLastZoom(0),
-	  mMaxZoom(0)
+	  mMaxZoom(0xffffffff)
 {
 	F_LOG;
 	memset(mDeviceName, 0, sizeof(mDeviceName));
@@ -254,12 +254,22 @@ status_t V4L2CameraDevice::stopDevice()
 
 static void calculateCrop(Rect * rect, int new_zoom, int max_zoom, int width, int height)
 {
-	int new_ratio = (new_zoom * 2 * 100 / max_zoom + 100);
-	rect->left		= (width - (width * 100) / new_ratio)/2;
-    rect->top		= (height - (height * 100) / new_ratio)/2;
-    rect->right		= rect->left + (width * 100) / new_ratio;
-    rect->bottom	= rect->top  + (height * 100) / new_ratio;
-
+	if (max_zoom == 0)
+	{
+		rect->left		= 0;
+	    rect->top		= 0;
+	    rect->right		= width;
+	    rect->bottom	= height;
+	}
+	else
+	{
+		int new_ratio = (new_zoom * 2 * 100 / max_zoom + 100);
+		rect->left		= (width - (width * 100) / new_ratio)/2;
+	    rect->top		= (height - (height * 100) / new_ratio)/2;
+	    rect->right		= rect->left + (width * 100) / new_ratio;
+	    rect->bottom	= rect->top  + (height * 100) / new_ratio;
+	}
+	
 	// LOGD("crop: [%d, %d, %d, %d]", rect->left, rect->top, rect->right, rect->bottom);
 }
 

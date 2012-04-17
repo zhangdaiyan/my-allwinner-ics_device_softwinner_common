@@ -24,6 +24,7 @@
     <string name="Attach">"连接"</string>
     <string name="Delete">"删除"</string>
     <string name="Copy">"复制"</string>
+    <string name="Paste">"粘贴"</string>
     <string name="Move">"剪切"</string>
     <string name="Display">"显示"</string>
     <string name="Text_color">"文本颜色"</string>

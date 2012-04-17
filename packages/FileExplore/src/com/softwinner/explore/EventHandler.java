@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -81,6 +83,7 @@ public class EventHandler implements OnClickListener{
 	private int	mlistmode = TREEVIEW_MODE;
 	
 	private final Context mContext;
+	private final FileOperateCallbacks mCallbacks;
 	private final FileManager mFileMang;
 	private final CatalogList mCataList;
 	private TableRow mDelegate;
@@ -121,10 +124,11 @@ public class EventHandler implements OnClickListener{
 	 * @param context	The context of the main activity e.g  Main
 	 * @param manager	The FileManager object that was instantiated from Main
 	 */
-	public EventHandler(Context context, final FileManager manager,final CatalogList CataList) {
+	public EventHandler(Context context, FileOperateCallbacks callbacks, final FileManager manager,final CatalogList CataList) {
 		mContext = context;
 		mFileMang = manager;
 		mCataList = CataList;
+		mCallbacks = callbacks;
 		
 		mDataSource = new ArrayList<String>(mFileMang.getHomeDir(FileManager.ROOT_FLASH));
 	}
@@ -251,6 +255,10 @@ public class EventHandler implements OnClickListener{
 	public void copyFileMultiSelect(String newLocation) {
 		String[] data;
 		int index = 1;
+		if(mMultiSelectData.size() > 0)
+		{
+			Log.d("chen","multi paste " + mMultiSelectData.toString());
+		}
 		
 		if (mMultiSelectData.size() > 0) {
 			data = new String[mMultiSelectData.size() + 1];
@@ -399,10 +407,27 @@ public class EventHandler implements OnClickListener{
 					hidden_lay.setVisibility(LinearLayout.VISIBLE);
 				}
 				break;
+				
+			case R.id.image_button:
+				mlistmode = CATALOG_MODE;
+				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_PICTURE));
+				if(mPathLabel != null)
+					mPathLabel.setText("Picture");
+				refreshFocus(preView,v);
+				break;
+				
+			case R.id.movie_button:
+				mlistmode = CATALOG_MODE;
+				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_MOVIE));
+				if(mPathLabel != null)
+					mPathLabel.setText("Movie");
+				refreshFocus(preView,v);
+				break;
 			
 			/* 
 			 * three hidden buttons for multiselect
 			 */
+			
 			case R.id.hidden_attach:
 				/* check if user selected objects before going further */
 				if(mMultiSelectData == null || mMultiSelectData.isEmpty()) {
@@ -430,22 +455,12 @@ public class EventHandler implements OnClickListener{
     			
     			mDelegate.killMultiSelect(true);
 				break;
-			case R.id.image_button:
-				mlistmode = CATALOG_MODE;
-				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_PICTURE));
-				if(mPathLabel != null)
-					mPathLabel.setText("Picture");
-				refreshFocus(preView,v);
-				break;
-				
-			case R.id.movie_button:
-				mlistmode = CATALOG_MODE;
-				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_MOVIE));
-				if(mPathLabel != null)
-					mPathLabel.setText("Movie");
-				refreshFocus(preView,v);
-				break;
-				
+			/* add by chenjd,chenjd@allwinnertech.com,20120313
+			 * add function:paste to current dir */
+			case R.id.hidden_paste:
+				String des = mFileMang.getCurrentDir();
+				Log.d("chen","paste to " + des);
+				mCallbacks.paste(des); 
 			case R.id.hidden_move:
 			case R.id.hidden_copy:
 				/* check if user selected objects before going further */
@@ -1150,15 +1165,81 @@ public class EventHandler implements OnClickListener{
 							
 							public void onClick(DialogInterface dialog, int position) {
 								String path = file.get(position);
-								updateDirectory(mFileMang.getNextDir(path.
-													substring(0, path.lastIndexOf("/")), true));
+//								updateDirectory(mFileMang.getNextDir(path.
+//													substring(0, path.lastIndexOf("/")), true));
+								/* add by chenjd.chenjd@allwinnertech.com,20120213
+								 * when it is a directory, open it,otherwise play it*/
+								File f = new File(path);
+						    	String item_ext = null;
+						    	
+						    	try {
+						    		item_ext = path.substring(path.lastIndexOf(".") + 1, path.length());
+						    		
+						    	} catch(IndexOutOfBoundsException e) {	
+						    		item_ext = ""; 
+						    	}
+								if(f.exists())
+								{
+									if(f.isDirectory())
+									{
+										if(f.canRead()) {
+								    		updateDirectory(mFileMang.getNextDir(path, true));
+								    		mPathLabel.setText(mFileMang.getCurrentDir());
+							    		} 
+									}
+									else if (TypeFilter.getInstance().isMusicFile(item_ext)) {
+						                Intent picIntent = new Intent();
+						                picIntent.setAction(android.content.Intent.ACTION_VIEW);
+						                picIntent.setDataAndType(Uri.fromFile(f), "audio/*");
+						                try{
+						                	mContext.startActivity(picIntent);
+						                }catch(ActivityNotFoundException e)
+						                {
+						                	Log.e("EventHandler", "can not find activity to open it");
+						                }
+							    	}
+							    	else if(TypeFilter.getInstance().isPictureFile(item_ext)) {  		
+								    	Intent picIntent = new Intent();
+								    	picIntent.setAction(android.content.Intent.ACTION_VIEW);
+								    	picIntent.setDataAndType(Uri.fromFile(f), "image/*");
+								    	try
+								    	{
+								    		mContext.startActivity(picIntent);
+								    	}catch(ActivityNotFoundException e)
+								    	{
+								    		Log.e("EventHandler", "can not find activity to open it");
+								    	}
+							    	}
+							    	/*video file selected--add more video formats*/
+							    	else if(TypeFilter.getInstance().isMovieFile(item_ext)) {
+									    Intent movieIntent = new Intent();
+									    movieIntent.putExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, false);
+									    movieIntent.setAction(android.content.Intent.ACTION_VIEW);
+									    movieIntent.setDataAndType(Uri.fromFile(f), "video/*");
+									    try{
+									    	mContext.startActivity(movieIntent);
+									    }catch(ActivityNotFoundException e)
+									    {
+									    	Log.e("EventHandler", "can not find activity to open it");
+									    }
+							    	}
+							    	else if(TypeFilter.getInstance().isApkFile(item_ext)){
+								    	Intent apkIntent = new Intent();
+								    	apkIntent.setAction(android.content.Intent.ACTION_VIEW);
+								    	apkIntent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
+								    	try {
+								    		mContext.startActivity(apkIntent);
+										} catch (ActivityNotFoundException e) {
+											Log.e("EventHandler", "can not find activity to open it");
+										}
+								    	
+							    	}
+								}
 							}
 						});
-						
 						AlertDialog dialog = builder.create();
 						dialog.show();
 					}
-					
 					pr_dialog.dismiss();
 					break;
 					
@@ -1173,7 +1254,7 @@ public class EventHandler implements OnClickListener{
 											Toast.LENGTH_SHORT).show();
 					else
 						Toast.makeText(mContext, "Copy pasted failed", Toast.LENGTH_SHORT).show();
-					
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir(), true));
 					pr_dialog.dismiss();
 					mInfoLabel.setText("");
 					break;

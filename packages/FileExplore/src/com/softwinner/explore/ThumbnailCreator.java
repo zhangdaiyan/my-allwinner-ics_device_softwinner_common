@@ -97,11 +97,17 @@ public class ThumbnailCreator {
 								}
 								else
 								{
-								mThumb = new SoftReference<Bitmap>(Bitmap.createScaledBitmap(
-				 						  BitmapFactory.decodeByteArray(thumbData, 0, thumbData.length),
-				 						  mWidth,
-				 						  mHeight,
-				 						  false));
+									Bitmap bmp = BitmapFactory.decodeByteArray(thumbData, 0, thumbData.length);
+									if(bmp != null)
+									{
+										mThumb = new SoftReference<Bitmap>(Bitmap.createScaledBitmap(
+												bmp,
+												mWidth,
+												mHeight,
+												false));
+									}
+									else
+										mThumb = null;
 								}
 							} 
 						}
@@ -124,11 +130,22 @@ public class ThumbnailCreator {
 				        options.inJustDecodeBounds = false;
 				        
 				        mBitmap=BitmapFactory.decodeFile(imageSrc,options);
-				        mThumb = new SoftReference<Bitmap>(Bitmap.createScaledBitmap(
+				        if(mBitmap != null)
+				        {
+				        	mThumb = new SoftReference<Bitmap>(Bitmap.createScaledBitmap(
 		 						  mBitmap,
 		 						  mWidth,
 		 						  mHeight,
 		 						  false));
+				        }
+				        else
+				        {
+				        	mThumb = null;
+				        }
+					}
+					if(mThumb == null)
+					{
+						return;
 					}
 					//mCacheBitmap.add(index,mThumb.get());
 					int size = mCacheBitmap.size();

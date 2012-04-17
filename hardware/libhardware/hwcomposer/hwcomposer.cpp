@@ -652,7 +652,11 @@ static int hwc_setlayerframepara(sun4i_hwc_context_t *ctx,uint32_t value)
 	tmpFrmBufAddr.addr[0]           = overlaypara->top_y;
 	tmpFrmBufAddr.addr[1]           = overlaypara->top_c;
 	tmpFrmBufAddr.addr[2]			= 0;
-
+	tmpFrmBufAddr.flag_addr           = overlaypara->flag_addr;
+  tmpFrmBufAddr.flag_stride         = overlaypara->flag_stride;
+  tmpFrmBufAddr.maf_valid           = overlaypara->maf_valid;
+  tmpFrmBufAddr.pre_frame_valid     = overlaypara->pre_frame_valid;
+  
 	if(overlaypara->bottom_c)
 	{
 		tmpFrmBufAddr.addr[2]		= 0;

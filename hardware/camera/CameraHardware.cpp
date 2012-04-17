@@ -336,6 +336,8 @@ void CameraHardware::initDefaultParameters()
 
 		value = mCameraConfig->defaultZoomValue();
 		p.set(CameraParameters::KEY_ZOOM, value);
+
+		getCameraDevice()->setCrop(0, max_zoom);
 	}
 
 
